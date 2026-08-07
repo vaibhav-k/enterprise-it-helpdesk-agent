@@ -413,6 +413,41 @@ JWT tokens contain:
 - Expiration time
 
 
+# API Authorization
+
+
+Protected APIs require:
+
+- Valid JWT token
+- Authenticated user identity
+
+
+Current flow:
+
+
+```text
+
+Request
+
+    |
+
+Bearer Token
+
+    |
+
+JWT Validation
+
+    |
+
+User Identity
+
+    |
+
+API Access
+
+```
+
+
 # Security Threat Considerations
 
 

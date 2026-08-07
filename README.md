@@ -60,7 +60,7 @@ Planned integrations:
 | Configuration management | Completed |
 | Azure Managed Identity foundation | Completed |
 | User authentication | Completed |
-| Ticket management | Planned |
+| Ticket management | Completed |
 | Azure Storage integration | Planned |
 | Key Vault integration | Planned |
 | AI Helpdesk Agent | Planned |
@@ -99,6 +99,30 @@ JWT Token
     |
 
 Protected API Access
+```
+
+
+## Ticket Workflow
+
+
+```text
+Employee
+
+    |
+
+JWT Authentication
+
+    |
+
+Ticket API
+
+    |
+
+Ticket Created
+
+    |
+
+Helpdesk Queue
 ```
 
 

@@ -8,96 +8,31 @@ Provides:
 - JWT token validation
 """
 
-from datetime import datetime, timedelta, timezone
+from collections.abc import Callable
 
 from fastapi import Depends, HTTPException
-from fastapi.security import (
-    HTTPAuthorizationCredentials,
-    HTTPBearer,
-)
-from jose import JWTError, jwt
 
-from app.core.config import settings
-
-security_scheme = HTTPBearer()
+from app.core.security import get_current_user
 
 
-def create_token(
-    username: str,
-    role: str,
-) -> str:
+def require_role(
+    required_role: str,
+) -> Callable:
     """
-    Create JWT access token.
-
-    Args:
-        username:
-            User identifier.
-
-        role:
-            Application role.
-
-    Returns:
-        Encoded JWT token.
+    Validate user role.
     """
 
-    expiry = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expiry_minutes)
+    def role_checker(
+        user: dict[str, str] = Depends(get_current_user),
+    ) -> dict[str, str]:
 
-    payload = {
-        "sub": username,
-        "role": role,
-        "exp": expiry,
-    }
+        if user["role"] != required_role:
 
-    return jwt.encode(
-        payload,
-        settings.jwt_secret,
-        algorithm=settings.jwt_algorithm,
-    )
+            raise HTTPException(
+                status_code=403,
+                detail="Insufficient permissions",
+            )
 
+        return user
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
-) -> dict[str, str]:
-    """
-    Validate JWT token.
-
-    Returns:
-        Authenticated user information.
-
-    Raises:
-        HTTPException:
-            When token is invalid.
-    """
-
-    token = credentials.credentials
-
-    try:
-
-        payload = jwt.decode(
-            token,
-            settings.jwt_secret,
-            algorithms=[settings.jwt_algorithm],
-        )
-
-    except JWTError as exc:
-
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid authentication token",
-        ) from exc
-
-    username = payload.get("sub")
-
-    role = payload.get("role")
-
-    if not isinstance(username, str) or not isinstance(role, str):
-
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid token payload",
-        )
-
-    return {
-        "username": username,
-        "role": role,
-    }
+    return role_checker

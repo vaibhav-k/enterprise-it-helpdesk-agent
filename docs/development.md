@@ -354,16 +354,16 @@ Completed:
 - Authentication flow implemented
 - Token response model added
 
-# Upcoming Development Steps
-
 ## Step 6
 
-Authorization:
+Completed:
 
-Planned:
+- Ticket model created
+- Protected ticket API added
+- JWT protected routes implemented
+- Authorization foundation added
 
-* Role validation
-* Permission boundaries
+# Upcoming Development Steps
 
 ## Step 7
 
