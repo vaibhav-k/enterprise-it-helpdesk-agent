@@ -5,6 +5,7 @@ Enterprise IT Helpdesk Agent API.
 from fastapi import FastAPI
 
 from app.api import (
+    admin,
     auth,
     configuration,
     knowledge,
@@ -15,6 +16,7 @@ app = FastAPI(
     title="Enterprise IT Helpdesk Agent",
 )
 
+app.include_router(admin.router)
 
 app.include_router(auth.router)
 

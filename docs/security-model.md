@@ -495,8 +495,35 @@ Key Vault Secrets User
 Azure Key Vault
 ```
 
-
 The application does not store Azure credentials.
+
+
+# Authorization Model
+
+
+Application authorization uses RBAC.
+
+```text
+
+Role
+
+|
+
+Permission
+
+|
+
+Resource Access
+
+```
+
+Roles:
+
+- Employee
+- Admin
+
+
+Permissions are explicitly assigned.
 
 
 # Security Threat Considerations

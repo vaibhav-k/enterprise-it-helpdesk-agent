@@ -381,15 +381,16 @@ Completed:
 - Secret retrieval pattern implemented
 - Key Vault RBAC documented
 
+## Step 9 — Authorization Model
+
+Completed:
+
+- RBAC permission model added
+- Role permissions defined
+- Protected endpoints implemented
+- Employee/Admin separation added
+
 # Upcoming Development Steps
-
-## Step 9 — Authorization Improvements
-
-Planned:
-
-* Role-based endpoint protection
-* Admin workflows
-* Permission boundaries
 
 ## Step 10 — AI Helpdesk Agent
 

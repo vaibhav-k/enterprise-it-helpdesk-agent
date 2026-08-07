@@ -180,6 +180,46 @@ Azure Key Vault
 
 ```
 
+
+## Authorization Model
+
+
+The application uses RBAC:
+
+```text
+
+User
+
+ |
+
+Role
+
+ |
+
+Permission
+
+    |
+
+Endpoint Access
+
+```
+
+Example:
+
+
+- Employee
+
+- ticket:create
+
+- Create Ticket
+
+- Admin
+
+- user:manage
+
+- User Management
+
+
 # Architecture Overview
 
 

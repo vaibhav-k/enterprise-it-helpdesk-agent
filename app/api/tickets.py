@@ -4,8 +4,12 @@ Helpdesk ticket API endpoints.
 
 from fastapi import APIRouter, Depends
 
+from app.core.permissions import (
+    Permission,
+)
 from app.core.security import (
     get_current_user,
+    require_permission,
 )
 from app.models.ticket import (
     TicketCreate,
@@ -27,7 +31,7 @@ tickets: list[TicketResponse] = []
 )
 def create_ticket(
     ticket: TicketCreate,
-    user: dict[str, str] = Depends(get_current_user),
+    user: dict[str, str] = Depends(require_permission(Permission.CREATE_TICKET)),
 ) -> TicketResponse:
     """
     Create a new helpdesk ticket.
