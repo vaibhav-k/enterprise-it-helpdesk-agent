@@ -59,11 +59,23 @@ Planned integrations:
 | Python environment setup | Completed |
 | Configuration management | Completed |
 | Azure Managed Identity foundation | Completed |
-| User authentication | In Progress |
+| User authentication | Foundation completed |
 | Ticket management | Planned |
 | Azure Storage integration | Planned |
 | Key Vault integration | Planned |
 | AI Helpdesk Agent | Planned |
+
+
+## Identity Foundation
+
+The application currently uses an internal user repository
+for development.
+
+Future production authentication options:
+
+- Enterprise Identity Provider
+- Azure SQL user database
+- External identity services
 
 
 # Architecture Overview

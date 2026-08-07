@@ -336,17 +336,16 @@ Azure identity foundation:
 * Managed Identity ready design
 * Azure CLI development support
 
+### Step 4
+
+Completed:
+
+- User model created
+- Password hashing implemented
+- User repository added
+- Role field introduced
+
 # Upcoming Development Steps
-
-## Step 4
-
-Local user repository:
-
-Planned:
-
-* User model
-* Password hashing
-* Role storage
 
 ## Step 5
 

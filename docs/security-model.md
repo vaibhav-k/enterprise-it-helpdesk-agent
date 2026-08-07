@@ -345,6 +345,38 @@ Knowledge Base Container
 
 ```
 
+# Application User Security
+
+
+Current development implementation:
+
+```text
+Username
+
+    |
+
+Password Hash
+
+    |
+
+bcrypt Verification
+
+    |
+
+Application Token
+```
+
+
+Passwords are **never** stored as plain text.
+
+
+Future production options:
+
+- Enterprise identity integration
+- Database-backed user management
+- Centralized identity provider
+
+
 
 # Security Threat Considerations
 
@@ -434,15 +466,3 @@ Planned:
 - API rate limiting
 - Audit logging
 - Production identity hardening
-
----
-
-After saving:
-
-```powershell
-git add docs/security-model.md
-
-git commit -m "docs: document authentication and security model"
-
-git push origin main
-```
