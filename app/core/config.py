@@ -1,7 +1,17 @@
+"""
+Application configuration module.
+
+Loads application settings from environment variables
+using Pydantic Settings.
+"""
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
+    """
+    Application runtime configuration.
+    """
 
     app_name: str = "Enterprise IT Helpdesk Agent"
 
@@ -13,11 +23,15 @@ class Settings(BaseSettings):
 
     azure_storage_account: str
 
-    azure_container: str
+    azure_container: str = "knowledge-base"
 
     keyvault_name: str
 
-    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False)
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+    )
 
 
 settings = Settings()
