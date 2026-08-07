@@ -24,6 +24,20 @@ password_context = CryptContext(
 users: list[User] = []
 
 
+def seed_users() -> None:
+    """
+    Create default development users.
+    """
+
+    users.append(
+        User(
+            username="employee",
+            password_hash=hash_password("Password123!"),
+            role="employee",
+        )
+    )
+
+
 def get_user_by_username(
     username: str,
 ) -> User | None:

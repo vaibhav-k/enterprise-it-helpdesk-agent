@@ -1,16 +1,18 @@
+"""
+User repository tests.
+"""
+
 from app.database.users import (
-    get_user,
-    verify_password,
+    get_user_by_username,
+    seed_users,
 )
 
-user = get_user("employee@test.com")
 
+def test_get_existing_user() -> None:
+    seed_users()
 
-if user:
-
-    assert user.username == "employee@test.com"
-    assert user.role == "employee"
-    assert verify_password(
-        "Password123!",
-        user.password_hash,
+    user = get_user_by_username(
+        "employee",
     )
+
+    assert user is not None

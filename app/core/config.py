@@ -1,16 +1,29 @@
 """
 Application configuration.
+
+Loads application settings from environment variables
+and optional .env configuration.
 """
 
 from pydantic_settings import (
     BaseSettings,
+    SettingsConfigDict,
 )
 
 
 class Settings(BaseSettings):
     """
     Application settings.
+
+    Values can be overridden using environment variables
+    or a local .env file.
     """
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=False,
+    )
 
     app_name: str = "Enterprise IT Helpdesk Agent"
 
@@ -29,10 +42,6 @@ class Settings(BaseSettings):
     azure_container: str = "knowledge-base"
 
     keyvault_name: str = ""
-
-    class Config:
-
-        env_file = ".env"
 
 
 settings = Settings()

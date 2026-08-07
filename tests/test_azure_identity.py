@@ -1,8 +1,22 @@
-from azure.core.credentials import TokenCredential
+"""
+Azure identity tests.
+"""
 
-from app.core.azure_identity import get_azure_credential
+from azure.identity import DefaultAzureCredential
 
-credential: TokenCredential = get_azure_credential()
+from app.core.azure_identity import (
+    get_azure_credential,
+)
 
 
-assert type(credential).__name__ == "DefaultAzureCredential"
+def test_azure_credential_type() -> None:
+    """
+    Verify Azure credential factory.
+    """
+
+    credential = get_azure_credential()
+
+    assert isinstance(
+        credential,
+        DefaultAzureCredential,
+    )

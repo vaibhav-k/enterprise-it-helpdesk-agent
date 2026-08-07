@@ -1,190 +1,242 @@
 # Enterprise IT Helpdesk Agent Architecture
 
-
 ## Overview
 
-The Enterprise IT Helpdesk Agent is designed as a secure backend service that can evolve into an AI-powered enterprise support platform.
+The Enterprise IT Helpdesk Agent is a secure, modular backend application designed to evolve into an AI-powered enterprise IT support platform running on Microsoft Azure.
 
 The current implementation focuses on:
 
-- Secure application foundation
-- Configuration management
-- Azure identity integration
-- Future Azure resource access
-
-
-# High-Level Architecture
-
-
-```
-
-+----------------------+
-|       Employee       |
-+----------+-----------+
-|
-|
-v
-+----------------------+
-|   FastAPI Backend    |
-|                      |
-| - API Layer          |
-| - Business Logic     |
-| - Security Layer     |
-+----------+-----------+
-|
-|
-v
-+----------------------+
-| Application Identity |
-|                      |
-| DefaultAzureCredential|
-+----------+-----------+
-|
-|
-v
-+----------------------+
-|   Azure Resources    |
-|                      |
-| Storage              |
-| Key Vault            |
-| Monitoring           |
-+----------------------+
-
-```
-
-
-# Application Components
-
-
-## API Layer
-
-Location:
-
-```
-
-app/api/
-
-```
-
-
-Responsibilities:
-
-- Expose REST endpoints
-- Handle HTTP requests
-- Validate input
-- Return API responses
-
-
-Current APIs:
-
-- Health endpoint
-- Authentication endpoint
-- Ticket endpoint
-
+* Secure FastAPI backend
+* JWT authentication
+* Role-based authorization (RBAC)
+* Azure Managed Identity integration
+* Azure Blob Storage access
+* Azure Key Vault integration
+* Audit logging and monitoring foundation
+* AI-ready service architecture
 
 ---
 
-## Core Layer
+# High-Level Architecture
+
+```text
+                     Employee
+
+                         |
+
+                         |
+
+                  FastAPI Backend
+
+                         |
+
+      ----------------------------------------
+
+      |            |            |            |
+
+ Authentication  Authorization  Services   Logging
+
+      |            |            |            |
+
+      ----------------------------------------
+
+                         |
+
+                  Business Layer
+
+                         |
+
+              Azure Identity Layer
+
+                         |
+
+             DefaultAzureCredential
+
+                         |
+
+      ----------------------------------------
+
+      |                |                  |
+
+ Azure Blob Storage   Key Vault   Azure Monitor
+```
+
+---
+
+# Application Structure
+
+```text
+app/
+
+├── api/
+├── core/
+├── database/
+├── middleware/
+├── models/
+├── services/
+└── agents/
+```
+
+Each layer has a single responsibility.
+
+---
+
+# API Layer
 
 Location:
 
+```text
+app/api/
 ```
-
-app/core/
-
-```
-
 
 Responsibilities:
 
-- Application configuration
-- Security utilities
-- Azure identity handling
+* REST API endpoints
+* Request validation
+* Response generation
+* Authentication
+* Authorization
 
+Current APIs:
+
+* Health
+* Authentication
+* Tickets
+* Knowledge Base
+* Configuration
+* Administration
+
+---
+
+# Core Layer
+
+Location:
+
+```text
+app/core/
+```
+
+Responsibilities:
+
+* Application configuration
+* JWT security
+* Password hashing
+* Authorization helpers
+* Azure authentication
+* Logging
 
 Components:
 
+* `config.py`
+* `security.py`
+* `azure_identity.py`
+* `permissions.py`
+* `logging.py`
 
-### Configuration
+---
 
-File:
+# Database Layer
 
+Location:
+
+```text
+app/database/
 ```
 
-config.py
+Responsibilities:
 
+* User repository
+* Data access abstraction
+
+Current implementation:
+
+* In-memory user repository
+
+Future:
+
+* SQLAlchemy
+* Azure SQL Database
+
+---
+
+# Models
+
+Location:
+
+```text
+app/models/
 ```
 
+Responsibilities:
 
-Purpose:
+* Request models
+* Response models
+* Domain models
 
-- Load environment settings
-- Centralize application configuration
+Current models include:
 
+* User
+* Authentication
+* Ticket
 
-### Azure Identity
+---
 
-File:
+# Middleware
 
+Location:
+
+```text
+app/middleware/
 ```
 
-azure_identity.py
+Responsibilities:
 
-```
+* Request auditing
+* Request logging
+* Monitoring hooks
 
+Current middleware:
 
-Purpose:
-
-Provide Azure authentication using:
-
-
-```
-
-DefaultAzureCredential
-
-```
-
+* AuditMiddleware
 
 ---
 
 # Azure Identity Architecture
 
+The application never stores Azure credentials.
 
-The application does not store Azure credentials.
+Authentication uses:
 
-
-## Local Development Flow
-
-
+```text
+DefaultAzureCredential
 ```
 
-Developer
+## Local Development
 
-    |
+```text
+Developer Machine
+
+        |
 
 Azure CLI Login
 
-    |
+        |
 
 DefaultAzureCredential
 
-    |
+        |
 
-Azure SDK
+   Azure SDK
 
-    |
+        |
 
-Azure Resource
-
+  Azure Resources
 ```
 
+## Azure Deployment
 
-## Azure Hosting Flow
-
-
-```
-
-Azure Application
+```text
+Application
 
         |
 
@@ -192,137 +244,129 @@ System Assigned Managed Identity
 
         |
 
-Azure RBAC
-
-    |
-
-Azure Resource
-
-```
-
-
-The same application code supports both scenarios.
-
-
-# Security Boundaries
-
-
-## Application Boundary
-
-
-The FastAPI application is responsible for:
-
-- User authentication
-- Request validation
-- Authorization checks
-
-
-## Azure Boundary
-
-
-Azure manages:
-
-- Resource authentication
-- Identity validation
-- Permission enforcement
-
-
-# Future Azure Integration Architecture
-
-
-Planned:
-
-
-```
-
-             FastAPI Agent
-
-                  |
-
-      ----------------------------
-
-      |                          |
-
-      v                          v
-
-Azure Blob Storage              Azure Key Vault
-
-Knowledge Base                 Secrets
-
-                  |
-
-                  v
-
-          AI Agent Layer
-
-                  |
-
-                  v
-
-          User Assistance
-
-```
-
-
-# Deployment Architecture
-
-
-Future production deployment:
-
-
-```
-
-Developer
-
-    |
-
-GitHub Repository
-
-    |
-
-Azure Deployment Pipeline
-
-            |
-
-Azure Application Hosting
-
-            |
-
-Managed Identity Enabled
+DefaultAzureCredential
 
         |
 
-Azure Services
-
+Azure Resources
 ```
 
+The same application code works in both environments.
+
+---
+
+# Authentication Architecture
+
+```text
+Employee
+
+      |
+
+Login API
+
+      |
+
+Password Verification
+
+      |
+
+JWT Generation
+
+      |
+
+Access Token
+
+      |
+
+Protected APIs
+```
+
+---
+
+# Authorization Architecture
+
+The application uses Role-Based Access Control.
+
+```text
+User
+
+      |
+
+Role
+
+      |
+
+Permission
+
+      |
+
+Protected Endpoint
+```
+
+Current roles:
+
+* Employee
+* Admin
+
+Example permissions:
+
+* ticket:create
+* ticket:view
+* user:manage
+
+---
+
+# Azure Authorization
+
+Azure authorization is separate from application authorization.
+
+```text
+Application
+
+        |
+
+Managed Identity
+
+        |
+
+Azure RBAC
+
+        |
+
+Azure Resource
+```
+
+Example roles:
+
+* Storage Blob Data Reader
+* Key Vault Secrets User
+* Monitoring Reader
+
+---
 
 # Knowledge Base Architecture
 
-
 ```text
+Employee
 
-User
+      |
 
- |
+Knowledge Endpoint
 
-Helpdesk Agent
+      |
 
-        |
+Blob Storage Service
 
-Knowledge Service
-
-        |
+      |
 
 Azure Blob Storage
 
-        |
+      |
 
 IT Documentation
-
 ```
 
-The application accesses documents using:
+Authentication:
 
 ```text
 DefaultAzureCredential
@@ -330,80 +374,170 @@ DefaultAzureCredential
 
 No storage keys are stored.
 
+---
 
-# Design Principles
+# Security Monitoring
 
+```text
+   Request
 
-## Security First
+      |
 
-All Azure communication should use identity-based authentication.
+Audit Middleware
 
+      |
 
-## Least Privilege
+Application Logging
 
-Applications receive only required permissions.
+      |
 
+Azure Monitor
 
-Example:
+      |
 
-
-Required:
-
+Application Insights
 ```
 
-Storage Blob Data Reader
+Events logged include:
 
-```
-
-
-Avoid:
-
-```
-
-Owner
-Contributor
-
-```
-
-
-## Configuration Separation
-
-Application configuration is separated from source code.
-
-
-Environment-specific values are stored outside the repository.
-
-
-# Current Status
-
-
-Completed:
-
-- Repository structure
-- Configuration layer
-- Azure identity foundation
-
-
-In Progress:
-
-- User authentication
-- Authorization model
-
-
-Planned:
-
-- Azure Storage integration
-- Key Vault integration
-- AI agent workflows
+* Successful logins
+* Failed logins
+* API requests
+* Authorization failures
 
 ---
 
-After saving:
+# Future AI Architecture
 
-```powershell
-git add docs/architecture.md
+The next development phase introduces an AI service layer.
 
-git commit -m "docs: add application architecture documentation"
+```text
+Employee
 
-git push origin main
+   |
+
+Chat API
+
+   |
+
+Helpdesk Agent
+
+      |
+
+AI Service
+
+    |
+
+Azure OpenAI
+
+      |
+
+Knowledge Retrieval
+
+      |
+
+   Response
 ```
+
+This separation allows AI providers to be replaced without changing the API layer.
+
+---
+
+# Deployment Architecture
+
+```text
+Developer
+
+    |
+
+GitHub Repository
+
+      |
+
+GitHub Actions (Future)
+
+          |
+
+Azure Application Hosting
+
+        |
+
+Managed Identity
+
+      |
+
+Azure Resources
+```
+
+---
+
+# Design Principles
+
+## Security First
+
+* Identity-based authentication
+* No embedded credentials
+* Secure defaults
+
+## Least Privilege
+
+Only minimum Azure permissions are assigned.
+
+Example:
+
+```text
+Storage Blob Data Reader
+```
+
+Avoid:
+
+```text
+Owner
+Contributor
+```
+
+unless explicitly required.
+
+## Separation of Concerns
+
+Each application layer has a single responsibility.
+
+* API
+* Core
+* Services
+* Database
+* Middleware
+
+## Configuration Management
+
+Environment-specific configuration is stored outside source control.
+
+Secrets are retrieved using Azure Key Vault.
+
+---
+
+# Current Status
+
+## Completed
+
+* Repository foundation
+* Configuration management
+* Azure identity foundation
+* User authentication
+* JWT security
+* Authorization model
+* Ticket API
+* Azure Blob Storage integration
+* Azure Key Vault integration
+* Azure RBAC design
+* Least privilege review
+* Audit logging
+* Monitoring foundation
+
+## Next Phase
+
+* AI service layer
+* Helpdesk agent
+* Azure OpenAI integration
+* Retrieval-Augmented Generation (RAG)
+* ITSM automation

@@ -7,6 +7,7 @@ from fastapi import FastAPI
 from app.api import (
     admin,
     auth,
+    chat,
     configuration,
     knowledge,
     tickets,
@@ -29,6 +30,8 @@ app.include_router(admin.router)
 app.add_middleware(AuditMiddleware)
 
 app.include_router(auth.router)
+
+app.include_router(chat.router)
 
 app.include_router(configuration.router)
 

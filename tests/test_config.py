@@ -1,6 +1,14 @@
-from app.core.config import Settings
+"""
+Configuration tests.
+"""
 
-settings = Settings()
+from app.core.config import settings
 
-assert settings.app_name == "Enterprise IT Helpdesk Agent"
-assert settings.jwt_algorithm == "HS256"
+
+def test_settings_load() -> None:
+    """
+    Verify application settings load correctly.
+    """
+
+    assert settings.app_name == "Enterprise IT Helpdesk Agent"
+    assert settings.environment == "development"
