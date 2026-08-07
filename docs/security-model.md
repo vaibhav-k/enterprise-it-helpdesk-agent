@@ -448,6 +448,35 @@ API Access
 ```
 
 
+# Storage Security
+
+
+Knowledge base access uses:
+
+```text
+
+Managed Identity
+
+        |
+
+Storage Blob Data Reader
+
+        |
+
+Azure Blob Storage
+
+```
+
+
+The application has read-only access.
+
+This prevents:
+
+- Document deletion
+- Document modification
+- Storage administration
+
+
 # Security Threat Considerations
 
 

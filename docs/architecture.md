@@ -297,6 +297,40 @@ Azure Services
 ```
 
 
+# Knowledge Base Architecture
+
+
+```text
+
+User
+
+ |
+
+Helpdesk Agent
+
+        |
+
+Knowledge Service
+
+        |
+
+Azure Blob Storage
+
+        |
+
+IT Documentation
+
+```
+
+The application accesses documents using:
+
+```text
+DefaultAzureCredential
+```
+
+No storage keys are stored.
+
+
 # Design Principles
 
 

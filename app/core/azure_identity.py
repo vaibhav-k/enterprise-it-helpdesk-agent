@@ -1,30 +1,32 @@
 """
 Azure identity provider.
 
-Uses DefaultAzureCredential which automatically selects
-the correct authentication method:
+Uses DefaultAzureCredential.
 
-Local:
-    Azure CLI credential
+Authentication sources:
 
-Azure hosting:
+Development:
+    Azure CLI
+
+Production:
     Managed Identity
-
-No secrets are stored in the application.
 """
 
-from azure.identity import DefaultAzureCredential
+from azure.identity import (
+    DefaultAzureCredential,
+)
 
-credential = DefaultAzureCredential(exclude_interactive_browser_credential=True)
+credential = DefaultAzureCredential(
+    exclude_interactive_browser_credential=True,
+)
 
 
 def get_azure_credential() -> DefaultAzureCredential:
     """
-    Returns Azure credential provider.
+    Return Azure credential provider.
 
-    This credential works with:
-    - Azure CLI locally
-    - Managed Identity in Azure
+    Returns:
+        Azure credential object.
     """
 
     return credential

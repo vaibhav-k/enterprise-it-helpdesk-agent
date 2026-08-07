@@ -61,7 +61,7 @@ Planned integrations:
 | Azure Managed Identity foundation | Completed |
 | User authentication | Completed |
 | Ticket management | Completed |
-| Azure Storage integration | Planned |
+| Azure Storage integration | Completed |
 | Key Vault integration | Planned |
 | AI Helpdesk Agent | Planned |
 
@@ -123,6 +123,37 @@ Ticket Created
     |
 
 Helpdesk Queue
+```
+
+
+## Knowledge Base
+
+
+The Helpdesk Agent connects to Azure Blob Storage for IT documentation.
+
+
+Flow:
+
+```text
+
+Helpdesk API
+
+        |
+
+Storage Service
+
+        |
+
+Managed Identity
+
+        |
+
+Azure Blob Storage
+
+        |
+
+Knowledge Documents
+
 ```
 
 

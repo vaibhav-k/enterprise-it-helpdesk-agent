@@ -3,7 +3,7 @@
 
 ## Overview
 
-This document explains how to set up, run, and contribute to the Enterprise IT Helpdesk Agent project.
+This document explains how to set up, run, test, and contribute to the Enterprise IT Helpdesk Agent project.
 
 The project is developed without Docker and uses a standard Python virtual environment workflow.
 
@@ -12,7 +12,6 @@ The project is developed without Docker and uses a standard Python virtual envir
 
 
 ## Requirements
-
 
 Install:
 
@@ -45,7 +44,7 @@ az --version
 Clone repository:
 
 ```powershell
-git clone <repository-url>
+git clone https://github.com/vaibhav-k/enterprise-it-helpdesk-agent.git
 ```
 
 Move into project folder:
@@ -160,32 +159,44 @@ DefaultAzureCredential
 
 Authentication selection:
 
-## Local
+## Local Development
 
 ```
-Developer
 
-    |
+Developer Machine
+
+        |
 
 Azure CLI Login
 
         |
 
 DefaultAzureCredential
+
+        |
+
+Azure SDK Client
+
 ```
 
 ## Azure Hosting
 
 ```
+
 Application
 
-    |
+        |
 
 Managed Identity
 
         |
 
 DefaultAzureCredential
+
+        |
+
+Azure Resource
+
 ```
 
 # Running the Application
@@ -208,9 +219,9 @@ Swagger API documentation:
 http://localhost:8000/docs
 ```
 
-# Code Quality Checks
+# Testing
 
-## Python Compilation
+## Python Compilation Check
 
 Before committing:
 
@@ -222,14 +233,6 @@ Expected:
 
 ```
 Listing 'app'...
-```
-
-## Git Status
-
-Check changes:
-
-```powershell
-git status
 ```
 
 # VS Code Configuration
@@ -273,6 +276,7 @@ Follow:
 * Type hints
 * Documentation strings
 * Small modules
+* Clear separation of responsibilities
 
 ## 3. Update Documentation
 
@@ -283,11 +287,9 @@ README.md
 
 docs/
 
-architecture.md
-
-security-model.md
-
-development.md
+    architecture.md
+    security-model.md
+    development.md
 ```
 
 ## 4. Validate
@@ -310,69 +312,91 @@ git commit -m "feat: add azure managed identity credential foundation"
 
 # Current Development Milestones
 
-## Completed
+## Step 1 — Repository Foundation
 
-### Step 1
-
-Repository foundation:
+Completed:
 
 * Python project structure
 * Dependency management
 * Git configuration
 
-### Step 2
+## Step 2 — Configuration Management
 
-Configuration management:
+Completed:
 
 * Pydantic Settings
 * Environment variables
 * Application configuration
 
-### Step 3
+## Step 3 — Azure Identity Foundation
 
-Azure identity foundation:
+Completed:
 
 * DefaultAzureCredential
 * Managed Identity ready design
 * Azure CLI development support
 
-### Step 4
+## Step 4 — User Repository and Password Security
 
 Completed:
 
-- User model created
-- Password hashing implemented
-- User repository added
-- Role field introduced
+* User model created
+* Password hashing implemented
+* User repository added
+* Role field introduced
 
-### Step 5
-
-Completed:
-
-- Login API created
-- JWT token generation added
-- Authentication flow implemented
-- Token response model added
-
-## Step 6
+## Step 5 — Authentication API
 
 Completed:
 
-- Ticket model created
-- Protected ticket API added
-- JWT protected routes implemented
-- Authorization foundation added
+* Login API created
+* JWT token generation added
+* Authentication flow implemented
+* Token response model added
+
+## Step 6 — Helpdesk Ticket API
+
+Completed:
+
+* Ticket model created
+* Protected ticket API added
+* JWT protected routes implemented
+* Authorization foundation added
+
+## Step 7 — Azure Blob Storage Integration
+
+Completed:
+
+* Azure Blob Storage service added
+* Managed Identity authentication connected
+* Knowledge base endpoint created
+* Storage security model documented
 
 # Upcoming Development Steps
 
-## Step 7
-
-Azure Services:
+## Step 8 — Azure Key Vault Integration
 
 Planned:
 
-* Blob Storage integration
-* Key Vault integration
+* Managed Identity Key Vault access
+* Secret retrieval service
+* Secure application configuration
+
+## Step 9 — Authorization Improvements
+
+Planned:
+
+* Role-based endpoint protection
+* Admin workflows
+* Permission boundaries
+
+## Step 10 — AI Helpdesk Agent
+
+Planned:
+
+* RAG knowledge retrieval
+* AI troubleshooting workflows
+* Automated IT assistance
 
 # Git Commit Convention
 
@@ -410,4 +434,5 @@ Always:
 * Avoid hardcoded secrets
 * Use managed identity for Azure access
 * Keep permissions minimal
+* Review RBAC assignments
 * Update documentation with architecture changes
