@@ -183,6 +183,33 @@ Azure Resource
 Both layers must allow access.
 
 
+# Security Monitoring
+
+
+Security events are logged for:
+
+- Login success
+- Login failures
+- API access
+- Authorization failures
+
+
+Monitoring flow:
+
+```text
+
+Application
+
+    |
+
+Audit Middleware
+
+        |
+
+Application Insights
+
+```
+
 # Azure Identity Security
 
 

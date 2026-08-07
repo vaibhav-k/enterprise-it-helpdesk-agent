@@ -11,12 +11,22 @@ from app.api import (
     knowledge,
     tickets,
 )
+from app.core.logging import (
+    configure_logging,
+)
+from app.middleware.audit import (
+    AuditMiddleware,
+)
+
+configure_logging()
 
 app = FastAPI(
     title="Enterprise IT Helpdesk Agent",
 )
 
 app.include_router(admin.router)
+
+app.add_middleware(AuditMiddleware)
 
 app.include_router(auth.router)
 

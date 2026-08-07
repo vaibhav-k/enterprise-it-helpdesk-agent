@@ -156,6 +156,30 @@ Knowledge Documents
 
 ```
 
+# Monitoring and Auditing
+
+
+The application records:
+
+- Authentication events
+- API requests
+- Security events
+
+Production monitoring:
+
+```text
+
+Application
+
+    |
+
+OpenTelemetry
+
+    |
+
+Application Insights
+
+```
 
 # Azure Security Model
 
@@ -165,7 +189,7 @@ The application uses two authorization layers:
 
 ## Application Authorization
 
-
+```text
 
 User
 
@@ -181,6 +205,7 @@ Permission
 
 API Access
 
+```
 
 
 ## Azure Authorization

@@ -14,6 +14,10 @@ class Settings(BaseSettings):
 
     app_name: str = "Enterprise IT Helpdesk Agent"
 
+    environment: str = "development"
+
+    enable_audit_logging: bool = True
+
     jwt_secret: str
 
     jwt_algorithm: str = "HS256"

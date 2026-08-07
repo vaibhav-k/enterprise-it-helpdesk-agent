@@ -1,31 +1,29 @@
 # Enterprise IT Helpdesk Agent Development Guide
 
-
 ## Overview
 
 This document explains how to set up, run, test, and contribute to the Enterprise IT Helpdesk Agent project.
 
 The project is developed without Docker and uses a standard Python virtual environment workflow.
 
+---
 
 # Development Environment
-
 
 ## Requirements
 
 Install:
 
-- Python 3.12+
-- Git
-- Visual Studio Code
-- Azure CLI
-
+* Python 3.12+
+* Git
+* Visual Studio Code
+* Azure CLI
 
 Verify Python:
 
 ```powershell
 python --version
-````
+```
 
 Verify Git:
 
@@ -39,19 +37,23 @@ Verify Azure CLI:
 az --version
 ```
 
+---
+
 # Repository Setup
 
-Clone repository:
+Clone the repository:
 
 ```powershell
 git clone https://github.com/vaibhav-k/enterprise-it-helpdesk-agent.git
 ```
 
-Move into project folder:
+Move into the project folder:
 
 ```powershell
 cd enterprise-it-helpdesk-agent
 ```
+
+---
 
 # Python Environment Setup
 
@@ -69,37 +71,39 @@ Activate:
 .venv\Scripts\activate
 ```
 
-Confirm environment:
+Verify:
 
 ```powershell
 python --version
 ```
 
-The terminal should show:
+The terminal prompt should display:
 
-```
+```text
 (.venv)
 ```
 
+---
+
 # Install Dependencies
 
-Install project packages:
+Install project dependencies:
 
 ```powershell
 pip install -r requirements.txt
 ```
 
-Verify:
+Verify installation:
 
 ```powershell
 pip list
 ```
 
+---
+
 # Environment Configuration
 
-The application uses environment variables for configuration.
-
-Create local configuration:
+Create a local configuration file:
 
 ```powershell
 copy .env.example .env
@@ -121,47 +125,49 @@ AZURE_STORAGE_ACCOUNT="storage-account"
 AZURE_CONTAINER="knowledge-base"
 
 KEYVAULT_NAME="keyvault-name"
-```
 
-Important:
+ENVIRONMENT="development"
+
+ENABLE_AUDIT_LOGGING=true
+```
 
 Never commit:
 
-```
+```text
 .env
 ```
 
-The repository only contains:
+Only commit:
 
-```
+```text
 .env.example
 ```
 
+---
+
 # Azure Development Setup
 
-## Login to Azure
+## Login
 
 ```powershell
 az login
 ```
 
-Verify account:
+Verify the active account:
 
 ```powershell
 az account show
 ```
 
-The application uses:
+The application authenticates using:
 
-```
+```text
 DefaultAzureCredential
 ```
 
-Authentication selection:
+### Local Development
 
-## Local Development
-
-```
+```text
 
 Developer Machine
 
@@ -179,9 +185,9 @@ Azure SDK Client
 
 ```
 
-## Azure Hosting
+### Azure Deployment
 
-```
+```text
 
 Application
 
@@ -199,9 +205,11 @@ Azure Resource
 
 ```
 
+---
+
 # Running the Application
 
-Start FastAPI:
+Start the development server:
 
 ```powershell
 uvicorn app.main:app --reload
@@ -209,31 +217,60 @@ uvicorn app.main:app --reload
 
 Application:
 
-```
+```text
 http://localhost:8000
 ```
 
-Swagger API documentation:
+Swagger UI:
 
-```
+```text
 http://localhost:8000/docs
 ```
 
-# Testing
+OpenAPI schema:
 
-## Python Compilation Check
+```text
+http://localhost:8000/openapi.json
+```
 
-Before committing:
+---
+
+# Validation
+
+## Compile Python Files
 
 ```powershell
 python -m compileall app
 ```
 
-Expected:
+## Ruff
 
+```powershell
+ruff check .
 ```
-Listing 'app'...
+
+## Git Status
+
+```powershell
+git status
 ```
+
+## Run the API
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+Verify:
+
+* Home endpoint (`/`)
+* Swagger UI (`/docs`)
+* Authentication
+* Ticket API
+* Knowledge API
+* Admin API
+
+---
 
 # VS Code Configuration
 
@@ -243,50 +280,49 @@ Recommended extensions:
 * Pylance
 * Ruff
 
-The project uses strict type checking.
+Project configuration:
 
-Configured in:
-
-```
+```text
 pyproject.toml
 ```
 
-and:
-
-```
+```text
 .vscode/settings.json
 ```
 
+---
+
 # Development Workflow
 
-Each feature follows this process:
+Each feature follows the same workflow.
 
 ## 1. Create Feature
 
 Example:
 
-```
-Add Azure identity service
+```text
+Add Azure Blob Storage service
 ```
 
-## 2. Implement Code
+## 2. Implement
 
-Follow:
+Follow these guidelines:
 
 * Type hints
-* Documentation strings
+* Docstrings
 * Small modules
-* Clear separation of responsibilities
+* Separation of concerns
+* Pylance clean
+* Ruff clean
 
 ## 3. Update Documentation
 
 Update relevant files:
 
-```
+```text
 README.md
 
 docs/
-
     architecture.md
     security-model.md
     development.md
@@ -298,6 +334,7 @@ Run:
 
 ```powershell
 python -m compileall app
+ruff check .
 ```
 
 ## 5. Commit
@@ -307,8 +344,10 @@ Example:
 ```powershell
 git add .
 
-git commit -m "feat: add azure managed identity credential foundation"
+git commit -m "feat: add azure blob storage integration"
 ```
+
+---
 
 # Current Development Milestones
 
@@ -333,84 +372,114 @@ Completed:
 Completed:
 
 * DefaultAzureCredential
-* Managed Identity ready design
-* Azure CLI development support
+* Azure identity abstraction
+* Managed Identity ready architecture
+* Azure CLI authentication support
 
 ## Step 4 — User Repository and Password Security
 
 Completed:
 
-* User model created
-* Password hashing implemented
-* User repository added
-* Role field introduced
+* User model
+* Password hashing
+* User repository
+* Role support
 
 ## Step 5 — Authentication API
 
 Completed:
 
-* Login API created
-* JWT token generation added
-* Authentication flow implemented
-* Token response model added
+* Login endpoint
+* JWT generation
+* Password verification
+* Protected authentication flow
 
 ## Step 6 — Helpdesk Ticket API
 
 Completed:
 
-* Ticket model created
-* Protected ticket API added
-* JWT protected routes implemented
-* Authorization foundation added
+* Ticket models
+* Ticket API
+* Protected endpoints
+* JWT authentication
 
 ## Step 7 — Azure Blob Storage Integration
 
 Completed:
 
-* Azure Blob Storage service added
-* Managed Identity authentication connected
-* Knowledge base endpoint created
-* Storage security model documented
+* Blob Storage service
+* Knowledge base endpoint
+* Managed Identity authentication
+* Storage security model
 
 ## Step 8 — Azure Key Vault Integration
 
 Completed:
 
-- Key Vault service added
-- Managed Identity authentication reused
-- Secret retrieval pattern implemented
-- Key Vault RBAC documented
+* Key Vault service
+* Secret retrieval
+* Managed Identity authentication
+* Key Vault RBAC documentation
 
 ## Step 9 — Authorization Model
 
 Completed:
 
-- RBAC permission model added
-- Role permissions defined
-- Protected endpoints implemented
-- Employee/Admin separation added
-
-# Upcoming Development Steps
-
+* Application RBAC
+* Permission model
+* Employee/Admin roles
+* Protected endpoints
 
 ## Step 10 — Azure RBAC and Least Privilege
 
 Completed:
 
-- Azure RBAC model documented
-- Managed Identity permissions defined
-- Least privilege review added
-- Resource access boundaries documented
+* Azure RBAC model
+* Managed Identity permission mapping
+* Least privilege review
+* Resource access boundaries
+* Security documentation
 
+## Step 11 — Production Security Hardening
 
-## Step 11 — Production Hardening
+Completed:
+
+* Structured logging
+* Audit middleware
+* Authentication event logging
+* Monitoring architecture
+* Application Insights integration foundation
+
+---
+
+# Upcoming Development
+
+## Step 12 — AI Helpdesk Agent Foundation
 
 Planned:
 
-- Azure RBAC deployment
-- Audit logging
-- Application monitoring
-- Security validation
+* AI service layer
+* Agent orchestration
+* Prompt management
+* Chat endpoint
+
+## Step 13 — RAG Knowledge Base
+
+Planned:
+
+* Knowledge retrieval
+* Document search
+* Context generation
+
+## Step 14 — ITSM Integration
+
+Planned:
+
+* Ticket workflow automation
+* External ITSM integration
+* Service operations
+
+---
 
 # Git Commit Convention
 
@@ -418,27 +487,35 @@ Use conventional commit format:
 
 Feature:
 
-```
+```text
 feat: add feature name
 ```
 
 Documentation:
 
-```
+```text
 docs: update documentation
 ```
 
 Maintenance:
 
-```
+```text
 chore: update tooling
 ```
 
-Bug fix:
+Bug Fix:
 
-```
+```text
 fix: correct issue description
 ```
+
+Refactoring:
+
+```text
+refactor: improve internal implementation
+```
+
+---
 
 # Security Development Rules
 
@@ -446,7 +523,9 @@ Always:
 
 * Use environment variables
 * Avoid hardcoded secrets
-* Use managed identity for Azure access
-* Keep permissions minimal
-* Review RBAC assignments
-* Update documentation with architecture changes
+* Use Managed Identity for Azure authentication
+* Apply least privilege principles
+* Protect endpoints with authentication and authorization
+* Review RBAC assignments before deployment
+* Keep documentation synchronized with implementation
+* Ensure the project remains free of Pylance and Ruff errors before committing

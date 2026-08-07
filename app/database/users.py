@@ -21,6 +21,24 @@ password_context = CryptContext(
     deprecated="auto",
 )
 
+users: list[User] = []
+
+
+def get_user_by_username(
+    username: str,
+) -> User | None:
+    """
+    Find user by username.
+    """
+
+    for user in users:
+
+        if user.username == username:
+
+            return user
+
+    return None
+
 
 def hash_password(password: str) -> str:
     """
