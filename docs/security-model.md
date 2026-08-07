@@ -477,6 +477,28 @@ This prevents:
 - Storage administration
 
 
+# Key Vault Security
+
+
+Secrets are accessed using:
+
+```text
+
+Managed Identity
+
+        |
+
+Key Vault Secrets User
+
+        |
+
+Azure Key Vault
+```
+
+
+The application does not store Azure credentials.
+
+
 # Security Threat Considerations
 
 

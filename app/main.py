@@ -6,6 +6,7 @@ from fastapi import FastAPI
 
 from app.api import (
     auth,
+    configuration,
     knowledge,
     tickets,
 )
@@ -15,18 +16,13 @@ app = FastAPI(
 )
 
 
-app.include_router(
-    auth.router,
-)
+app.include_router(auth.router)
 
+app.include_router(configuration.router)
 
-app.include_router(
-    tickets.router,
-)
+app.include_router(knowledge.router)
 
-app.include_router(
-    knowledge.router,
-)
+app.include_router(tickets.router)
 
 
 @app.get("/")

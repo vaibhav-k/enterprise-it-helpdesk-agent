@@ -62,7 +62,7 @@ Planned integrations:
 | User authentication | Completed |
 | Ticket management | Completed |
 | Azure Storage integration | Completed |
-| Key Vault integration | Planned |
+| Key Vault integration | Completed |
 | AI Helpdesk Agent | Planned |
 
 
@@ -156,6 +156,29 @@ Knowledge Documents
 
 ```
 
+
+## Secure Configuration
+
+
+Application secrets are retrieved through:
+
+```text
+
+FastAPI
+
+    |
+
+Key Vault Service
+
+        |
+
+Managed Identity
+
+        |
+
+Azure Key Vault
+
+```
 
 # Architecture Overview
 

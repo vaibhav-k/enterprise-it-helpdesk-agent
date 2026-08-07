@@ -372,15 +372,16 @@ Completed:
 * Knowledge base endpoint created
 * Storage security model documented
 
-# Upcoming Development Steps
-
 ## Step 8 — Azure Key Vault Integration
 
-Planned:
+Completed:
 
-* Managed Identity Key Vault access
-* Secret retrieval service
-* Secure application configuration
+- Key Vault service added
+- Managed Identity authentication reused
+- Secret retrieval pattern implemented
+- Key Vault RBAC documented
+
+# Upcoming Development Steps
 
 ## Step 9 — Authorization Improvements
 
