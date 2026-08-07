@@ -16,6 +16,7 @@ from datetime import (
     timedelta,
     timezone,
 )
+from typing import Any
 
 from fastapi import (
     Depends,
@@ -59,7 +60,7 @@ def hash_password(
     Hash plain password.
     """
 
-    return password_context.hash(password)
+    return password_context.hash(password)  # pyright: ignore
 
 
 def verify_password(
@@ -70,14 +71,14 @@ def verify_password(
     Verify password against hash.
     """
 
-    return password_context.verify(
+    return password_context.verify(  # pyright: ignore
         plain_password,
         hashed_password,
     )
 
 
 def create_access_token(
-    data: dict[str, str],
+    data: dict[str, Any],
 ) -> str:
     """
     Create JWT access token.
@@ -155,7 +156,7 @@ def has_permission(
 
 def require_permission(
     permission: Permission,
-) -> Callable:
+) -> Callable[..., dict[str, str]]:
     """
     FastAPI authorization dependency.
     """

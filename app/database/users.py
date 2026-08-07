@@ -52,7 +52,7 @@ def hash_password(password: str) -> str:
         BCrypt password hash.
     """
 
-    return password_context.hash(password)
+    return password_context.hash(password)  # pyright: ignore
 
 
 def verify_password(
@@ -73,7 +73,7 @@ def verify_password(
         True if password matches.
     """
 
-    return password_context.verify(
+    return password_context.verify(  # pyright: ignore
         password,
         password_hash,
     )

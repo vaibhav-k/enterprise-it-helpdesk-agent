@@ -10,11 +10,13 @@ Tracks:
 """
 
 import time
+from collections.abc import Awaitable, Callable
 
 from fastapi import Request
 from starlette.middleware.base import (
     BaseHTTPMiddleware,
 )
+from starlette.responses import Response
 
 from app.core.logging import (
     get_logger,
@@ -33,8 +35,8 @@ class AuditMiddleware(BaseHTTPMiddleware):
     async def dispatch(
         self,
         request: Request,
-        call_next,
-    ):
+        call_next: Callable[[Request], Awaitable[Response]],
+    ) -> Response:
 
         start_time = time.time()
 

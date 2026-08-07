@@ -18,17 +18,17 @@ class Settings(BaseSettings):
 
     enable_audit_logging: bool = True
 
-    jwt_secret: str
+    jwt_secret: str = ""
 
     jwt_algorithm: str = "HS256"
 
     jwt_expiry_minutes: int = 480
 
-    azure_storage_account: str
+    azure_storage_account: str = ""
 
     azure_container: str = "knowledge-base"
 
-    keyvault_name: str
+    keyvault_name: str = ""
 
     class Config:
 
