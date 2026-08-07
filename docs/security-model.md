@@ -138,6 +138,51 @@ Permissions:
 - User management (future)
 
 
+# Azure Authorization Model
+
+
+Application authorization and Azure authorization are separate layers.
+
+
+Application Layer:
+
+```text
+
+User
+
+ |
+
+JWT Role
+
+    |
+
+Application Permission
+
+```
+
+Azure Layer:
+
+```text
+
+Application
+
+|
+
+Managed Identity
+
+|
+
+Azure RBAC
+
+|
+
+Azure Resource
+
+```
+
+Both layers must allow access.
+
+
 # Azure Identity Security
 
 

@@ -157,6 +157,55 @@ Knowledge Documents
 ```
 
 
+# Azure Security Model
+
+
+The application uses two authorization layers:
+
+
+## Application Authorization
+
+
+
+User
+
+|
+
+Role
+
+|
+
+Permission
+
+|
+
+API Access
+
+
+
+## Azure Authorization
+
+```text
+
+Application
+
+    |
+
+Managed Identity
+
+    |
+
+RBAC Role
+
+    |
+
+Azure Resource
+
+```
+
+This provides defense in depth.
+
+
 ## Secure Configuration
 
 

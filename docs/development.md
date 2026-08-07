@@ -392,13 +392,25 @@ Completed:
 
 # Upcoming Development Steps
 
-## Step 10 — AI Helpdesk Agent
+
+## Step 10 — Azure RBAC and Least Privilege
+
+Completed:
+
+- Azure RBAC model documented
+- Managed Identity permissions defined
+- Least privilege review added
+- Resource access boundaries documented
+
+
+## Step 11 — Production Hardening
 
 Planned:
 
-* RAG knowledge retrieval
-* AI troubleshooting workflows
-* Automated IT assistance
+- Azure RBAC deployment
+- Audit logging
+- Application monitoring
+- Security validation
 
 # Git Commit Convention
 
