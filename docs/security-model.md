@@ -377,6 +377,41 @@ Future production options:
 - Centralized identity provider
 
 
+# JWT Authentication
+
+
+Current authentication flow:
+
+
+```text
+
+User
+
+ |
+
+Username + Password
+
+        |
+
+bcrypt Verification
+
+    |
+
+JWT Token
+
+    |
+
+Authorized Request
+
+```
+
+
+JWT tokens contain:
+
+- Username
+- Role
+- Expiration time
+
 
 # Security Threat Considerations
 

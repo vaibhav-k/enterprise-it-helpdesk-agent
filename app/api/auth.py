@@ -1,25 +1,64 @@
+"""
+Authentication API endpoints.
+"""
+
 from fastapi import APIRouter, HTTPException
 
-from app.database.users import get_user
+from app.core.security import (
+    create_token,
+)
+from app.database.users import (
+    get_user,
+    verify_password,
+)
+from app.models.auth import (
+    LoginRequest,
+    TokenResponse,
+)
 
-from app.models.auth import LoginRequest, TokenResponse
+router = APIRouter(
+    prefix="/auth",
+    tags=["Authentication"],
+)
 
-from app.core.security import verify_password, create_token
 
-router = APIRouter(prefix="/auth", tags=["authentication"])
-
-
-@router.post("/login", response_model=TokenResponse)
-def login(request: LoginRequest) -> TokenResponse:
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+)
+def login(
+    request: LoginRequest,
+) -> TokenResponse:
+    """
+    Authenticate user and return JWT token.
+    """
 
     user = get_user(request.username)
 
     if user is None:
 
-        raise HTTPException(401, "Invalid credentials")
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password",
+        )
 
-    if not verify_password(request.password, user.password_hash):
+    password_valid = verify_password(
+        request.password,
+        user.password_hash,
+    )
 
-        raise HTTPException(401, "Invalid credentials")
+    if not password_valid:
 
-    return TokenResponse(access_token=create_token(user.username, user.role))
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid username or password",
+        )
+
+    token = create_token(
+        username=user.username,
+        role=user.role,
+    )
+
+    return TokenResponse(
+        access_token=token,
+    )

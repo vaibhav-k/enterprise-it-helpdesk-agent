@@ -345,17 +345,16 @@ Completed:
 - User repository added
 - Role field introduced
 
+### Step 5
+
+Completed:
+
+- Login API created
+- JWT token generation added
+- Authentication flow implemented
+- Token response model added
+
 # Upcoming Development Steps
-
-## Step 5
-
-Authentication API:
-
-Planned:
-
-* Login endpoint
-* JWT token creation
-* Request authentication
 
 ## Step 6
 

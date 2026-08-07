@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends
 
 from app.core.security import current_user
-
 from app.models.ticket import TicketCreate, TicketResponse
 
 router = APIRouter(prefix="/tickets", tags=["tickets"])

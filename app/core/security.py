@@ -1,51 +1,103 @@
+"""
+Application security utilities.
+
+Provides:
+
+- Password verification
+- JWT token creation
+- JWT token validation
+"""
+
 from datetime import datetime, timedelta, timezone
 
-from jose import jwt
-
 from fastapi import Depends, HTTPException
-
-from fastapi.security import HTTPAuthorizationCredentials
-from fastapi.security import HTTPBearer
-
-from passlib.context import CryptContext
-
+from fastapi.security import (
+    HTTPAuthorizationCredentials,
+    HTTPBearer,
+)
+from jose import JWTError, jwt
 
 from app.core.config import settings
-
-password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 
 security_scheme = HTTPBearer()
 
 
-def verify_password(password: str, hashed: str) -> bool:
+def create_token(
+    username: str,
+    role: str,
+) -> str:
+    """
+    Create JWT access token.
 
-    return password_context.verify(password, hashed)
+    Args:
+        username:
+            User identifier.
 
+        role:
+            Application role.
 
-def create_token(username: str, role: str) -> str:
+    Returns:
+        Encoded JWT token.
+    """
 
     expiry = datetime.now(timezone.utc) + timedelta(minutes=settings.jwt_expiry_minutes)
 
-    payload = {"sub": username, "role": role, "exp": expiry}
+    payload = {
+        "sub": username,
+        "role": role,
+        "exp": expiry,
+    }
 
-    return jwt.encode(payload, settings.jwt_secret, algorithm=settings.jwt_algorithm)
+    return jwt.encode(
+        payload,
+        settings.jwt_secret,
+        algorithm=settings.jwt_algorithm,
+    )
 
 
-def current_user(
+def get_current_user(
     credentials: HTTPAuthorizationCredentials = Depends(security_scheme),
 ) -> dict[str, str]:
+    """
+    Validate JWT token.
+
+    Returns:
+        Authenticated user information.
+
+    Raises:
+        HTTPException:
+            When token is invalid.
+    """
+
+    token = credentials.credentials
 
     try:
 
         payload = jwt.decode(
-            credentials.credentials,
+            token,
             settings.jwt_secret,
             algorithms=[settings.jwt_algorithm],
         )
 
-        return {"username": str(payload["sub"]), "role": str(payload["role"])}
+    except JWTError as exc:
 
-    except Exception as exc:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid authentication token",
+        ) from exc
 
-        raise HTTPException(status_code=401, detail="Invalid token") from exc
+    username = payload.get("sub")
+
+    role = payload.get("role")
+
+    if not isinstance(username, str) or not isinstance(role, str):
+
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid token payload",
+        )
+
+    return {
+        "username": username,
+        "role": role,
+    }

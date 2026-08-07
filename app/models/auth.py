@@ -1,14 +1,30 @@
-from pydantic import BaseModel
+"""
+Authentication request and response models.
+"""
+
+from pydantic import BaseModel, Field
 
 
 class LoginRequest(BaseModel):
+    """
+    User login request.
+    """
 
-    username: str
+    username: str = Field(
+        min_length=3,
+        description="User login name",
+    )
 
-    password: str
+    password: str = Field(
+        min_length=8,
+        description="User password",
+    )
 
 
 class TokenResponse(BaseModel):
+    """
+    JWT token response.
+    """
 
     access_token: str
 
