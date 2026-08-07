@@ -1,184 +1,76 @@
-# Azure Identity & Security Weekend Practice Roadmap
+# Enterprise IT Helpdesk Agent
 
-## Objective
+A secure enterprise IT helpdesk backend built using Python FastAPI and Azure cloud security patterns.
 
-The objective of this weekend practice is to gain practical experience implementing enterprise identity and security patterns on Microsoft Azure.
+The project demonstrates how to build an enterprise-ready IT support platform with:
 
-By the end of this sprint, you should understand and implement:
+- Secure application authentication
+- Role-based access control
+- Azure Managed Identity
+- Azure RBAC ready architecture
+- Secure Azure resource access
+- Future AI agent integration
 
-- Azure Managed Identities
-- User and application authentication patterns
-- Azure authorization models
-- Microsoft Entra ID application permissions
-- RBAC-based access control
-- Least privilege security design
 
-The goal is to build a small secure Azure application that follows enterprise identity best practices.
+# Project Vision
 
----
+The goal is to build an internal IT Helpdesk Agent capable of:
 
-# Weekend Project
+- Creating IT support tickets
+- Managing employee requests
+- Accessing enterprise knowledge resources
+- Integrating with Azure services securely
+- Supporting future AI-powered workflows
 
-## Project: Secure Azure Application Identity Lab
 
-Build a small backend application deployed on Azure that:
+# Technology Stack
 
-- Authenticates users using Microsoft Entra ID
-- Uses Managed Identity to access Azure resources
-- Uses RBAC for authorization
-- Follows least privilege principles
+## Backend
 
----
+- Python 3.12
+- FastAPI
+- Pydantic Settings
 
-# Target Architecture
 
-```
-             User
+## Security
 
-              |
+- JWT authentication
+- Password hashing
+- Role-based authorization
+- Azure Managed Identity
+- Azure RBAC
 
-              |
 
-      Microsoft Entra ID
+## Azure Services
 
-              |
+Planned integrations:
 
-              |
+- Azure Blob Storage
+- Azure Key Vault
+- Azure Application Insights
+- Azure AI services
 
-      Backend Application
 
-              |
+# Current Development Status
 
-    ----------------------
+| Feature | Status |
+|---|---|
+| Repository structure | Completed |
+| Python environment setup | Completed |
+| Configuration management | Completed |
+| Azure Managed Identity foundation | Completed |
+| User authentication | In Progress |
+| Ticket management | Planned |
+| Azure Storage integration | Planned |
+| Key Vault integration | Planned |
+| AI Helpdesk Agent | Planned |
 
-    |                    |
 
-Managed Identity    User Context
+# Architecture Overview
 
-    |                    |
 
-    |                    |
+Current architecture:
 
-Azure Resources       Microsoft APIs
-
-    |
-
-    |
-
-Storage / Key Vault
-
-```
-
----
-
-# Day 1 — Identity & Authentication Foundation
-
-## Morning Session (3-4 Hours)
-
-## 1. Azure Identity Fundamentals
-
-### Learn
-
-- Microsoft Entra ID concepts
-- Users
-- Applications
-- Service principals
-- Managed identities
-- Access tokens
-
-
-### Practice
-
-Create:
-
-- Azure Resource Group
-- Storage Account
-- Key Vault
-- App Service / Container App
-
-
-### Outcome
-
-Understand:
-
-```
-Identity
-|
-Authentication
-|
-Authorization
-```
-
----
-
-# 2. Managed Identity Practice
-
-## Learn
-
-Types:
-
-### System Assigned Identity
-
-- Created with Azure resource
-- Lifecycle tied to resource
-
-
-### User Assigned Identity
-
-- Independent Azure resource
-- Can be shared
-
-
----
-
-## Hands-on
-
-Tasks:
-
-1. Enable Managed Identity on Azure resource
-
-2. Verify identity appears in Entra ID
-
-3. Assign RBAC permissions
-
-
-Example:
-
-```
-Container App
-
-        |
-
-Managed Identity
-
-        |
-
-Storage Blob Data Reader
-
-        |
-
-Storage Account
-
-```
-
----
-
-## Skills Practiced
-
-✅ Workload identity  
-✅ Passwordless authentication  
-✅ Azure resource access  
-
----
-
-# Afternoon Session (3-4 Hours)
-
-# 3. Authentication Patterns
-
-## Pattern 1 — User Authentication
-
-
-Implement:
 
 ```
 
@@ -186,275 +78,15 @@ User
 
 |
 
-Microsoft Entra Login
+FastAPI Helpdesk API
 
 |
 
-Application
+Application Security Layer
 
 |
 
-JWT Token
-
-```
-
-
-Learn:
-
-- OAuth 2.0
-- OpenID Connect
-- Access tokens
-- ID tokens
-
-
-Practice:
-
-- Register application
-- Configure redirect URL
-- Login using Entra ID
-
-
----
-
-## Pattern 2 — Application Authentication
-
-
-Implement:
-
-```
-
-Backend Service
-
-    |
-
-Client Credential Flow
-
-    |
-
-Microsoft API
-
-```
-
-
-Learn:
-
-- Service principals
-- Application permissions
-- Client credentials flow
-
-
-Practice:
-
-- Create app registration
-- Add API permission
-- Request token
-
-
----
-
-# Day 1 Deliverables
-
-By end of Day 1:
-
-✅ Azure environment created  
-✅ Managed Identity configured  
-✅ Application registered in Entra ID  
-✅ User authentication working  
-✅ Service-to-service authentication understood  
-
-
----
-
-# Day 2 — Authorization & Security Design
-
-## Morning Session (3-4 Hours)
-
-# 4. Authorization Models
-
-## Learn RBAC
-
-Understand:
-
-```
-
-Who?
-
-Can do what?
-
-Where?
-
-```
-
-Example:
-
-```
-
-Application Identity
-
-        |
-
-Storage Blob Reader Role
-
-        |
-
-Storage Account
-
-```
-
----
-
-## Practice RBAC
-
-Tasks:
-
-Create permissions:
-
-### Storage
-
-```
-Storage Blob Data Reader
-```
-
-### Key Vault
-
-```
-Key Vault Secrets User
-```
-
-### Container
-
-```
-Reader
-```
-
----
-
-Test:
-
-Allowed:
-
-```
-Read document
-```
-
-Denied:
-
-```
-Delete resource
-```
-
----
-
-# 5. Microsoft Entra API Permissions
-
-Practice:
-
-Configure Microsoft Graph access.
-
-
-Examples:
-
-Read user profile:
-
-```
-User.Read.All
-```
-
-
-Read groups:
-
-```
-Group.Read.All
-```
-
-
-Understand:
-
-- Delegated permissions
-- Application permissions
-- Admin consent
-
-
----
-
-# Afternoon Session (3-4 Hours)
-
-# 6. Least Privilege Design
-
-## Goal
-
-Reduce unnecessary permissions.
-
-
-Review:
-
-Current:
-
-```
-
-Application
-
-Permissions:
-
-Owner
-Full Directory Access
-
-```
-
-Improve:
-
-```
-
-Application
-
-Permissions:
-
-User.Read.All
-
-Storage Reader
-
-Key Vault Reader
-
-```
-
-
----
-
-## Security Review Exercise
-
-For each permission:
-
-Ask:
-
-### Why does the application need this?
-
-### What happens if compromised?
-
-### Can access be reduced?
-
-
----
-
-# 7. Build Final Secure Application
-
-
-Final implementation:
-
-```
-
-User
-
-|
-
-Entra Authentication
-
-|
-
-Backend API
-
-|
-
-Managed Identity
+Azure Identity Layer
 
 |
 
@@ -463,105 +95,256 @@ Azure Resources
 ```
 
 
-Security controls:
-
-- No stored secrets
-- RBAC enabled
-- Minimal permissions
-- Audit logging enabled
+# Azure Identity Architecture
 
 
----
-
-# Day 2 Deliverables
-
-By end of Day 2:
-
-✅ RBAC configured  
-✅ API permissions configured  
-✅ Least privilege review completed  
-✅ Secure application architecture documented  
-✅ Identity flow understood  
-
-
----
-
-# Weekend Schedule Summary
-
-| Time | Activity |
-|-|-|
-| Saturday Morning | Azure Identity fundamentals |
-| Saturday Morning | Managed Identity |
-| Saturday Afternoon | OAuth authentication |
-| Saturday Afternoon | Service principals |
-| Sunday Morning | RBAC authorization |
-| Sunday Morning | Microsoft Graph permissions |
-| Sunday Afternoon | Least privilege design |
-| Sunday Afternoon | Security review |
-
-
----
-
-# Skills Checklist
-
-## Managed Identity
-
-- [ ] Enable system assigned identity
-- [ ] Create user assigned identity
-- [ ] Assign RBAC permissions
-- [ ] Access Azure resources without secrets
-
-
-## Authentication
-
-- [ ] Register Entra application
-- [ ] Implement OAuth login
-- [ ] Understand access tokens
-- [ ] Implement service authentication
-
-
-## Authorization
-
-- [ ] Configure Azure RBAC
-- [ ] Assign roles
-- [ ] Understand delegated permissions
-- [ ] Understand application permissions
-
-
-## Least Privilege
-
-- [ ] Review permissions
-- [ ] Remove excessive access
-- [ ] Create minimal role assignments
-- [ ] Document security decisions
-
-
----
-
-# Final Outcome
-
-After this weekend sprint, you will have practical experience designing secure Azure workloads using:
+The application uses Azure SDK authentication through:
 
 ```
 
-Microsoft Entra ID
+DefaultAzureCredential
 
-    +
+```
+
+
+The same application code supports both environments.
+
+
+## Local Development
+
+
+```
+
+Developer Machine
+
+    |
+
+Azure CLI Login
+
+    |
+
+DefaultAzureCredential
+
+    |
+
+Azure SDK Client
+
+```
+
+
+## Azure Deployment
+
+
+```
+
+Azure Application
+
+    |
 
 Managed Identity
 
-    +
+    |
 
-Authentication Patterns
+Azure RBAC
 
-    +
+    |
 
-Authorization Models
-
-    +
-
-Least Privilege Security
+Azure Resources
 
 ```
 
-These skills form the foundation for building secure enterprise applications and AI agents on Azure.
+
+Benefits:
+
+- No Azure secrets stored in code
+- No connection strings required
+- Same code works locally and in Azure
+- Supports enterprise security practices
+
+
+# Repository Structure
+
+
+```
+
+enterprise-it-helpdesk-agent/
+
+├── app/
+│
+│   ├── api/
+│   ├── core/
+│   ├── database/
+│   ├── models/
+│   └── services/
+│
+├── docs/
+│
+├── requirements.txt
+├── pyproject.toml
+└── README.md
+
+````
+
+
+# Local Development
+
+
+## Create Virtual Environment
+
+
+Windows:
+
+```powershell
+python -m venv .venv
+````
+
+Activate:
+
+```powershell
+.venv\Scripts\activate
+```
+
+Install dependencies:
+
+```powershell
+pip install -r requirements.txt
+```
+
+Create environment file:
+
+```powershell
+copy .env.example .env
+```
+
+Run application:
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+API documentation:
+
+```
+http://localhost:8000/docs
+```
+
+# Azure Development
+
+Login using Azure CLI:
+
+```powershell
+az login
+```
+
+Verify account:
+
+```powershell
+az account show
+```
+
+The application uses:
+
+```
+DefaultAzureCredential
+```
+
+to automatically discover available Azure authentication.
+
+# Security Principles
+
+The project follows:
+
+## Least Privilege
+
+Only required permissions should be assigned to application components.
+
+## No Secrets in Code
+
+Avoid:
+
+* Passwords
+* API keys
+* Connection strings
+
+## Managed Identity
+
+Azure resources are accessed using:
+
+```
+Application Identity
+
+        |
+
+Managed Identity
+
+        |
+
+Azure RBAC
+
+        |
+
+Azure Resource
+```
+
+# Development Roadmap
+
+## Phase 1 — Security Foundation
+
+Completed:
+
+* Project setup
+* Configuration management
+* Azure identity foundation
+
+## Phase 2 — Application Security
+
+Next:
+
+* User management
+* JWT authentication
+* Role authorization
+
+## Phase 3 — Azure Integration
+
+Planned:
+
+* Blob Storage knowledge base
+* Key Vault secrets
+* Application monitoring
+
+## Phase 4 — AI Agent
+
+Planned:
+
+* RAG knowledge retrieval
+* AI troubleshooting workflows
+* IT automation
+
+# Contribution
+
+Development follows small Git commits:
+
+Example:
+
+```
+feat: add azure managed identity credential foundation
+```
+
+Each milestone updates:
+
+* Source code
+* Documentation
+* Security model
+
+
+---
+
+After saving:
+
+Run:
+
+```powershell
+git add README.md
+
+git commit -m "docs: update readme with project architecture and development status"
+```

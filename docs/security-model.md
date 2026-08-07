@@ -1,41 +1,448 @@
-# Security Model
+# Enterprise IT Helpdesk Agent Security Model
+
+
+## Overview
+
+Security is a core design requirement of the Enterprise IT Helpdesk Agent.
+
+The application follows enterprise security principles:
+
+- Identity-based authentication
+- Least privilege access
+- Secure configuration management
+- Separation of application and infrastructure security
+
+
+# Security Architecture
+
+
+```
+
++----------------------+
+|        User          |
++----------+-----------+
+           |
+           |
+           v
++----------------------+
+|   FastAPI Service    |
+|                      |
+| Authentication       |
+| Authorization        |
++----------+-----------+
+           |
+           |
+           v
++----------------------+
+| Azure Identity Layer |
+|                      |
+| DefaultAzureCredential|
++----------+-----------+
+           |
+           |
+           v
++----------------------+
+|  Azure Resources    |
+|                      |
+| Storage              |
+| Key Vault            |
++----------------------+
+
+```
+
+
+# Authentication Model
+
+
+## Application Authentication
+
+The application authentication layer is responsible for:
+
+- Identifying users
+- Validating credentials
+- Creating authentication tokens
+
+
+Current implementation:
+
+```
+
+Username
+
+    |
+
+Password Verification
+
+    |
+
+JWT Token
+
+    |
+
+Authenticated Request
+
+```
+
+
+Passwords are never stored as plain text.
+
+Password storage uses:
+
+```
+
+bcrypt hashing
+
+```
+
+
+# Authorization Model
+
+
+Authentication answers:
+
+```
+
+Who are you?
+
+```
+
+
+Authorization answers:
+
+```
+
+What are you allowed to do?
+
+```
+
+
+The application uses role-based authorization.
+
+
+Current roles:
+
+
+## Employee
+
+Permissions:
+
+- Create helpdesk tickets
+- Access permitted application features
+
+
+## Admin
+
+Permissions:
+
+- Administrative operations
+- User management (future)
+
+
+# Azure Identity Security
+
+
+## DefaultAzureCredential
+
+
+The application uses:
+
+
+```
+
+DefaultAzureCredential
+
+```
+
+
+This provides automatic credential selection.
+
+
+## Local Development
+
+
+Authentication source:
+
+```
+
+Azure CLI Credential
+
+```
+
+
+Flow:
+
+
+```
+
+Developer
+
+    |
+
+az login
+
+    |
+
+Azure CLI Token
+
+    |
+
+Application
+
+```
+
+
+## Production
+
+
+Authentication source:
+
+```
+
+Managed Identity
+
+```
+
+
+Flow:
+
+
+```
+
+Application Hosting Platform
+
+                |
+
+System Assigned Managed Identity
+
+    |
+
+Azure RBAC
+
+    |
+
+Azure Resource
+
+```
+
+
+# Secret Management
+
+
+The application must never store:
+
+
+- Azure access keys
+- Database passwords
+- API secrets
+- Connection strings
+
+
+Avoid:
+
+
+```
+
+password = "secret123"
+
+storage_key = "xxxx"
+
+```
+
+
+Use:
+
+
+```
+
+Environment Configuration
+
+        +
+
+Managed Identity
+
+        +
+
+Azure Key Vault
+
+```
+
+
+# Least Privilege Design
+
+
+Every component should receive only the minimum permissions required.
+
+
+Example:
+
+
+## Knowledge Base Storage
+
+
+Required:
+
+```
+
+Storage Blob Data Reader
+
+```
+
+
+Reason:
+
+Read IT documentation.
+
+
+Not required:
+
+```
+
+Storage Blob Data Contributor
+
+```
+
+
+Reason:
+
+The application does not modify documents.
+
+
+# Azure RBAC Model
+
+
+Future resource permissions:
+
+
+```
+
+Helpdesk Agent Identity
+
+            |
+
+Azure Role Assignment
+
+            |
+
+Specific Azure Resource
+
+```
+
+
+Example:
+
+
+```
+
+Managed Identity
+
+        |
+
+Storage Blob Data Reader
+
+        |
+
+Knowledge Base Container
+
+```
+
+
+# Security Threat Considerations
+
+
+## Credential Exposure
+
+
+Risk:
+
+Application secrets leaked.
+
+
+Mitigation:
+
+- No secrets in source code
+- Managed Identity
+- Key Vault integration
+
+
+## Excessive Permissions
+
+
+Risk:
+
+Compromised application gains unnecessary access.
+
+
+Mitigation:
+
+- RBAC review
+- Least privilege roles
+- Resource-level permissions
+
+
+## Unauthorized API Access
+
+
+Risk:
+
+Unknown users access APIs.
+
+
+Mitigation:
+
+- Authentication layer
+- Token validation
+- Role checks
+
+
+# Security Review Checklist
+
+
+## Identity
+
+- [x] Azure identity foundation added
+- [ ] Managed Identity enabled in Azure hosting
+- [ ] RBAC roles assigned
 
 
 ## Authentication
 
-Implemented using:
-
-- JWT tokens
-- Password hashing
-- Bearer authentication
+- [ ] User authentication implemented
+- [ ] JWT validation completed
 
 
 ## Authorization
 
-Roles:
-
-employee:
-- Create tickets
+- [ ] Role permissions documented
+- [ ] Access boundaries reviewed
 
 
-admin:
-- Manage tickets
+## Secrets
+
+- [x] No secrets stored in repository
+- [ ] Azure Key Vault integration completed
 
 
-## Azure Access
-
-Application never stores:
-
-- Storage keys
-- Connection strings
-- Secrets
+# Future Security Improvements
 
 
-Uses:
+Planned:
 
-DefaultAzureCredential
 
-with:
+- Azure Key Vault integration
+- Centralized logging
+- Application Insights monitoring
+- API rate limiting
+- Audit logging
+- Production identity hardening
 
-Managed Identity in Azure
-Azure CLI locally
+---
+
+After saving:
+
+```powershell
+git add docs/security-model.md
+
+git commit -m "docs: document authentication and security model"
+
+git push origin main
+```
