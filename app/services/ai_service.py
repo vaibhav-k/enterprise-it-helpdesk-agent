@@ -52,6 +52,7 @@ class AIService:
         self._client = OpenAI(
             base_url=self._build_base_url(endpoint),
             api_key=token_provider,
+            timeout=settings.azure_openai_timeout_seconds,
         )
 
         self._deployment = deployment

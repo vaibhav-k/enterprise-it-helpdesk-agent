@@ -844,6 +844,87 @@ Always:
 
 ---
 
+## AI Logging and Data Protection
+
+The Helpdesk Agent must not log complete user prompts or AI-generated responses by default.
+
+AI conversations may contain:
+
+- Employee information
+- Internal system details
+- Security-related information
+- Troubleshooting data
+- Potentially sensitive enterprise information
+
+### Logging Rule
+
+Application logs should contain operational metadata only.
+
+Allowed examples:
+
+```text
+AI request received
+AI request completed
+AI request failed
+AI request duration: 1.42 seconds
+AI provider: Azure OpenAI
+````
+
+Do not log:
+
+```text
+User prompt
+AI response
+Authorization header
+Bearer token
+API key
+Azure credential
+Connection string
+Secret value
+```
+
+### Error Handling
+
+Provider errors must not be returned directly to employees.
+
+The application should expose a safe application-level error:
+
+```text
+The AI service could not process the request.
+```
+
+The original exception may be retained through exception chaining for internal diagnostics, but sensitive exception details must not be exposed through API responses or ordinary application logs.
+
+### Authentication
+
+Azure OpenAI authentication uses:
+
+```text
+DefaultAzureCredential
+```
+
+The application must not store Azure OpenAI API keys in source code or configuration files committed to Git.
+
+### Testing
+
+Azure OpenAI tests must use mocks.
+
+Running:
+
+```powershell
+pytest
+```
+
+must not require:
+
+* Azure login
+* Azure OpenAI availability
+* Azure OpenAI API keys
+* Production Azure resources
+* Network access to Azure OpenAI
+
+---
+
 # Future Security Enhancements
 
 Future production hardening should include:
