@@ -1,91 +1,71 @@
 """
-Enterprise IT Helpdesk Agent.
-
-Responsible for coordinating user requests
-and generating support responses.
-
-The agent delegates AI generation to AIService.
+Helpdesk agent orchestration.
 """
 
-from app.core.logging import (
-    get_logger,
-)
-from app.services.ai_service import (
-    AIService,
-)
+from __future__ import annotations
 
-logger = get_logger(
-    "helpdesk_agent",
-)
+from typing import Protocol
+
+from app.services.ai_service import ChatMessage
+
+
+class AIServiceProtocol(Protocol):
+    """Interface required by the helpdesk agent."""
+
+    def generate_response(
+        self,
+        messages: list[ChatMessage],
+    ) -> str:
+        """Generate an AI response from chat messages."""
+        ...
 
 
 class HelpdeskAgent:
-    """
-    Main helpdesk agent orchestrator.
-    """
+    """Application-level helpdesk agent."""
 
-    def __init__(
-        self,
-        ai_service: AIService,
-    ) -> None:
+    def __init__(self, ai_service: AIServiceProtocol) -> None:
         """
-        Initialize helpdesk agent.
+        Initialize the helpdesk agent.
 
         Args:
-            ai_service:
-                AI response generation service.
+            ai_service: AI provider implementing the required interface.
         """
 
-        self.ai_service = ai_service
+        self._ai_service = ai_service
 
-    def process_request(
-        self,
-        message: str,
-    ) -> str:
+    def process_request(self, message: str) -> str:
         """
-        Process employee helpdesk request.
+        Process a helpdesk request.
 
         Args:
-            message:
-                Employee question.
+            message: User's helpdesk message.
 
         Returns:
-            Generated helpdesk response.
+            Generated assistant response.
+
+        Raises:
+            ValueError: If the message is empty.
         """
 
-        logger.info(
-            "helpdesk_request_received",
-        )
+        cleaned_message = message.strip()
 
-        prompt = self._build_prompt(
-            message,
-        )
+        if not cleaned_message:
+            raise ValueError("Message must not be empty.")
 
-        response = self.ai_service.generate_response(prompt)
+        messages: list[ChatMessage] = [
+            {
+                "role": "system",
+                "content": (
+                    "You are an enterprise IT helpdesk assistant. "
+                    "Provide clear, concise, and safe IT support guidance. "
+                    "Do not invent company policies, credentials, or "
+                    "security-sensitive information."
+                ),
+            },
+            {
+                "role": "user",
+                "content": cleaned_message,
+            },
+        ]
 
-        logger.info(
-            "helpdesk_response_completed",
-        )
-
-        return response
-
-    def _build_prompt(
-        self,
-        message: str,
-    ) -> str:
-        """
-        Build AI prompt.
-
-        Args:
-            message:
-                Employee question.
-
-        Returns:
-            Formatted AI prompt.
-        """
-
-        return (
-            "You are an enterprise IT helpdesk assistant.\n\n"
-            "Help the employee with the following request:\n\n"
-            f"{message}"
-        )
+        return self._ai_service.generate_response(messages)
