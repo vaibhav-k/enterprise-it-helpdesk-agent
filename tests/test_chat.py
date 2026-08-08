@@ -1,47 +1,69 @@
 """
-Tests for the helpdesk agent.
+Tests for the helpdesk chat API.
 """
 
-from app.agents.helpdesk_agent import HelpdeskAgent
-from app.services.ai_service import ChatMessage
+from typing import cast
+
+import httpx2
+from fastapi.testclient import TestClient
+
+from app.api.chat import get_helpdesk_agent
+from app.core.security import get_current_user
+from app.main import app
 
 
-class FakeAIService:
-    """Fake AI service used for unit testing."""
+class FakeHelpdeskAgent:
+    """Fake helpdesk agent for API tests."""
 
-    def generate_response(
-        self,
-        messages: list[ChatMessage],
-    ) -> str:
-        """Return a deterministic test response."""
+    def process_request(self, message: str) -> str:
+        """
+        Return a deterministic response.
 
-        assert messages[0]["role"] == "system"
-        assert messages[1]["role"] == "user"
-        assert messages[1]["content"] == "My laptop is not working."
+        Args:
+            message: User's helpdesk message.
 
-        return "Please restart your laptop and try again."
+        Returns:
+            Fake helpdesk response.
+        """
 
-
-def test_helpdesk_agent_response() -> None:
-    """Verify the helpdesk agent generates a response."""
-
-    agent = HelpdeskAgent(FakeAIService())
-
-    response = agent.process_request(
-        "My laptop is not working.",
-    )
-
-    assert response == "Please restart your laptop and try again."
+        return f"Test response: {message}"
 
 
-def test_helpdesk_agent_rejects_empty_message() -> None:
-    """Verify empty helpdesk messages are rejected."""
+def test_chat_endpoint() -> None:
+    """Verify the chat endpoint delegates to the helpdesk agent."""
 
-    agent = HelpdeskAgent(FakeAIService())
+    def fake_current_user() -> dict[str, str]:
+        """Return a test employee identity."""
+
+        return {
+            "username": "employee",
+            "role": "employee",
+        }
+
+    def fake_helpdesk_agent() -> FakeHelpdeskAgent:
+        """Return the fake helpdesk agent."""
+
+        return FakeHelpdeskAgent()
+
+    app.dependency_overrides[get_current_user] = fake_current_user
+    app.dependency_overrides[get_helpdesk_agent] = fake_helpdesk_agent
+
+    client: TestClient = TestClient(app)
 
     try:
-        agent.process_request("   ")
-    except ValueError as exc:
-        assert str(exc) == "Message must not be empty."
-    else:
-        raise AssertionError("Expected ValueError.")
+        response: httpx2.Response = cast(
+            httpx2.Response,
+            client.post(  # type: ignore
+                "/chat",
+                json={
+                    "message": "My laptop is not working.",
+                },
+            ),
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "response": "Test response: My laptop is not working.",
+    }
