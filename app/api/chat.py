@@ -1,10 +1,12 @@
 """
-Helpdesk chat API.
+Chat API endpoints.
 """
+
+from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends
 
 from app.agents.helpdesk_agent import HelpdeskAgent
 from app.core.security import get_current_user
@@ -18,24 +20,59 @@ router = APIRouter(
 )
 
 
-def get_helpdesk_agent() -> HelpdeskAgent:
+def get_ai_service() -> AIService:
     """
-    Create the helpdesk agent.
+    Provide the configured AI service.
 
     Returns:
-        Configured helpdesk agent.
+        Azure OpenAI service instance.
     """
 
-    return HelpdeskAgent(AIService(), KnowledgeService())
+    return AIService()
 
 
-@router.post(
-    "",
-    status_code=status.HTTP_200_OK,
-)
+def get_knowledge_service() -> KnowledgeService:
+    """
+    Provide the configured knowledge service.
+
+    Returns:
+        Azure Blob Storage knowledge service instance.
+    """
+
+    return KnowledgeService()
+
+
+def get_helpdesk_agent(
+    ai_service: Annotated[
+        AIService,
+        Depends(get_ai_service),
+    ],
+    knowledge_service: Annotated[
+        KnowledgeService,
+        Depends(get_knowledge_service),
+    ],
+) -> HelpdeskAgent:
+    """
+    Provide the helpdesk agent.
+
+    Args:
+        ai_service: Configured AI provider.
+        knowledge_service: Configured knowledge provider.
+
+    Returns:
+        Application helpdesk agent.
+    """
+
+    return HelpdeskAgent(
+        ai_service=ai_service,
+        knowledge_service=knowledge_service,
+    )
+
+
+@router.post("")
 def chat(
     request: ChatRequest,
-    user: Annotated[
+    _: Annotated[
         dict[str, str],
         Depends(get_current_user),
     ],
@@ -45,33 +82,19 @@ def chat(
     ],
 ) -> ChatResponse:
     """
-    Process an authenticated helpdesk question.
+    Process an authenticated helpdesk chat request.
 
     Args:
         request: Employee chat request.
-        user: Authenticated application user.
-        agent: Helpdesk agent.
+        _: Authenticated employee identity.
+        agent: Helpdesk agent dependency.
 
     Returns:
         Generated helpdesk response.
-
-    Raises:
-        HTTPException: If AI processing fails.
     """
 
-    del user
+    response = agent.process_request(request)
 
-    try:
-        response = agent.process_request(request)
-    except ValueError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(exc),
-        ) from exc
-    except RuntimeError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="The AI service could not process the request.",
-        ) from exc
-
-    return ChatResponse(response=response)
+    return ChatResponse(
+        response=response,
+    )
