@@ -1,21 +1,20 @@
 # Enterprise IT Helpdesk Agent
 
-A secure, modular enterprise IT helpdesk backend built with **Python, FastAPI, and Microsoft Azure**.
+A secure, Azure-ready enterprise IT Helpdesk backend built with **Python, FastAPI, JWT authentication, role-based authorization, and Azure identity-based resource access**.
 
-The project demonstrates enterprise application patterns including:
+The project is being developed incrementally with a strong focus on:
 
-* JWT-based authentication
-* Role-based authorization
-* Least-privilege security
-* Azure Managed Identity
+* Authentication
+* Authorization
+* Managed identities
 * Azure RBAC
-* Azure Blob Storage integration
-* Azure Key Vault integration
-* Audit logging and monitoring
-* AI-ready helpdesk agent architecture
-* Automated testing and code quality validation
+* Least privilege
+* Secure configuration
+* Knowledge-base integration
+* AI agent architecture
+* Production-ready engineering practices
 
-The application is developed **without Docker** using a standard Python virtual environment workflow.
+> **Current scope:** The application does not use Microsoft Entra ID for end-user authentication. Application users are currently managed through the internal development user repository. Azure Managed Identity is used for application-to-Azure authentication.
 
 ---
 
@@ -23,15 +22,55 @@ The application is developed **without Docker** using a standard Python virtual 
 
 The goal is to build an internal IT Helpdesk Agent capable of:
 
-* Handling employee IT requests
-* Creating and managing support tickets
-* Accessing enterprise knowledge resources
-* Providing authenticated employee assistance
-* Using Azure resources securely
-* Supporting AI-powered troubleshooting
-* Integrating with future ITSM platforms
+* Creating and managing IT support tickets
+* Authenticating employees
+* Applying role-based permissions
+* Searching enterprise knowledge
+* Accessing Azure resources securely
+* Providing AI-powered IT assistance
+* Integrating with future ITSM workflows
+* Supporting production enterprise security requirements
 
-The architecture is designed so that AI, RAG, and ITSM capabilities can be added without redesigning the security foundation.
+---
+
+# Architecture
+
+The current high-level architecture is:
+
+```text
+                         Employee
+                            |
+                            v
+                    +---------------+
+                    |   FastAPI API |
+                    +-------+-------+
+                            |
+                +-----------+-----------+
+                |                       |
+                v                       v
+         Authentication          Authorization
+                |                       |
+                v                       v
+              JWT                  Role/Permission
+                                        |
+                                        v
+                              +-------------------+
+                              | Helpdesk Services |
+                              +---------+---------+
+                                        |
+                       +----------------+----------------+
+                       |                                 |
+                       v                                 v
+                Azure Services                     AI Services
+                       |                                 |
+              +--------+--------+                        |
+              |                 |                        |
+              v                 v                        v
+         Blob Storage       Key Vault              AI Provider
+              |
+              v
+       Knowledge Base
+```
 
 ---
 
@@ -43,207 +82,108 @@ The architecture is designed so that AI, RAG, and ITSM capabilities can be added
 * FastAPI
 * Pydantic
 * Pydantic Settings
-* SQLAlchemy foundation
+* Uvicorn
 
-## Authentication and Security
+## Authentication
 
-* JWT authentication
+* JWT
 * Password hashing
-* Role-based access control
-* Application-level permissions
-* Azure Managed Identity
-* Azure RBAC
-* Least-privilege design
+* Internal user repository
+* FastAPI security dependencies
+
+## Authorization
+
+* Role-based authorization
+* Permission-based access control
+* Protected API endpoints
 
 ## Azure
 
 * Azure Identity
+* `DefaultAzureCredential`
 * Azure Blob Storage
 * Azure Key Vault
-* Azure Monitor / Application Insights foundation
+* Azure RBAC
+* Application Insights / OpenTelemetry
 
 ## AI Architecture
 
-* Helpdesk Agent
-* AI Service abstraction
-* Provider-independent AI interface
+* AI service abstraction
+* Helpdesk agent layer
+* Provider-independent design
 * Azure OpenAI integration planned
 
 ## Development Tools
 
-* pytest
-* Ruff
-* Black
-* Pylance
+* Git
+* GitHub
 * Visual Studio Code
+* Pylance
+* Ruff
+* Mypy
+* Pytest
 * Azure CLI
 
 ---
 
 # Current Development Status
 
-| Capability                | Status      |
-| ------------------------- | ----------- |
-| Repository foundation     | ✅ Completed |
-| Configuration management  | ✅ Completed |
-| Azure identity foundation | ✅ Completed |
-| JWT authentication        | ✅ Completed |
-| Password security         | ✅ Completed |
-| Role-based authorization  | ✅ Completed |
-| Ticket API                | ✅ Completed |
-| Azure Blob Storage        | ✅ Completed |
-| Azure Key Vault           | ✅ Completed |
-| Azure RBAC model          | ✅ Completed |
-| Least-privilege model     | ✅ Completed |
-| Audit logging             | ✅ Completed |
-| Monitoring foundation     | ✅ Completed |
-| AI service abstraction    | ✅ Completed |
-| Helpdesk agent            | ✅ Completed |
-| Protected chat API        | ✅ Completed |
-| Azure OpenAI integration  | ⏳ Next      |
-| RAG knowledge retrieval   | ⏳ Planned   |
-| ITSM automation           | ⏳ Planned   |
+| Component                      | Status      |
+| ------------------------------ | ----------- |
+| Repository foundation          | Completed   |
+| Python environment             | Completed   |
+| Configuration management       | Completed   |
+| Azure identity foundation      | Completed   |
+| JWT authentication             | Completed   |
+| Password hashing               | Completed   |
+| User repository                | Completed   |
+| Role-based authorization       | Completed   |
+| Ticket API                     | Completed   |
+| Azure Blob Storage integration | Completed   |
+| Azure Key Vault integration    | Completed   |
+| Security logging foundation    | Completed   |
+| Helpdesk agent abstraction     | Completed   |
+| AI service abstraction         | Completed   |
+| Chat API foundation            | Completed   |
+| Azure OpenAI integration       | In progress |
+| RAG knowledge retrieval        | Planned     |
+| ITSM integration               | Planned     |
+| Production hardening           | Planned     |
 
 ---
 
-# Architecture
+# Identity Model
 
-## High-Level Architecture
+The project intentionally separates **user authentication** from **Azure resource authentication**.
 
-```text
-                         Employee
-                            |
-                            v
-                    +---------------+
-                    |   FastAPI API  |
-                    +-------+-------+
-                            |
-             +--------------+--------------+
-             |              |              |
-             v              v              v
-       Authentication   Authorization    Audit
-             |              |              |
-             +--------------+--------------+
-                            |
-                            v
-                    Application Services
-                            |
-             +--------------+--------------+
-             |              |              |
-             v              v              v
-        Ticket Service  Knowledge      AI Agent
-                         Service           |
-             |              |              |
-             |              v              v
-             |        Azure Blob      AI Service
-             |                           |
-             |                           v
-             |                     Azure OpenAI
-             |
-             v
-       Application Data
-```
-
-Azure resource access is performed through the Azure identity layer:
-
-```text
-Application
-    |
-DefaultAzureCredential
-    |
-Managed Identity
-    |
-Azure RBAC
-    |
-Azure Resource
-```
-
----
-
-# Authentication Flow
-
-The current development authentication model uses the application's internal user repository.
+## Application User Authentication
 
 ```text
 Employee
-    |
-    v
+   |
+   v
 Login API
-    |
-    v
-Username / Password
-        |
-        v
+   |
+   v
+User Repository
+   |
+   v
 Password Verification
-        |
-        v
-JWT Access Token
-    |
-    v
+   |
+   v
+  JWT
+   |
+   v
 Protected API
 ```
 
-Protected endpoints validate the JWT before processing the request.
+The current application does not require Microsoft Entra ID for employee login.
 
 ---
 
-# Authorization Model
+# Azure Application Identity
 
-The application separates authentication from authorization.
-
-## Authentication
-
-Answers:
-
-```text
-Who are you?
-```
-
-## Authorization
-
-Answers:
-
-```text
-What are you allowed to do?
-```
-
-The application uses role-based permissions:
-
-```text
-       User
-        |
-        v
-        Role
-        |
-        v
-    Permission
-        |
-        v
-Protected Endpoint
-```
-
-Example:
-
-```text
-Employee
-    |
-    +-- ticket:create
-    +-- ticket:view
-
-Admin
-    |
-    +-- ticket:create
-    +-- ticket:view
-    +-- user:manage
-```
-
----
-
-# Azure Identity Architecture
-
-Azure credentials are not stored in application source code.
-
-The application uses:
+Azure resources are accessed using:
 
 ```text
 DefaultAzureCredential
@@ -253,54 +193,161 @@ DefaultAzureCredential
 
 ```text
 Developer Machine
-        |
-        v
+       |
+       v
 Azure CLI Login
-        |
-        v
+       |
+       v
 DefaultAzureCredential
-        |
-        v
-    Azure SDK
-        |
-        v
+       |
+       v
+  Azure SDK
+       |
+       v
 Azure Resource
+```
+
+Authenticate locally:
+
+```powershell
+az login
+```
+
+Verify:
+
+```powershell
+az account show
 ```
 
 ## Azure Hosting
 
+Production Azure hosting is designed to use managed identity:
+
 ```text
 Azure Application
-        |
-        v
+       |
+       v
 Managed Identity
-        |
-        v
+       |
+       v
 DefaultAzureCredential
-        |
-        v
-    Azure RBAC
-        |
-        v
+       |
+       v
+  Azure RBAC
+       |
+       v
 Azure Resource
 ```
 
-This allows the same application code to work in development and Azure-hosted environments.
-
-### Benefits
-
-* No Azure credentials in source code
-* No storage account keys
-* No application secrets for Azure authentication
-* Identity-based access
-* RBAC enforcement
-* Least-privilege permissions
+This avoids storing Azure credentials inside the application.
 
 ---
 
-# Azure Blob Storage
+# Authentication
 
-Azure Blob Storage provides the foundation for the enterprise knowledge base.
+The application uses JWT authentication for protected APIs.
+
+Login flow:
+
+```text
+POST /auth/login
+       |
+       v
+Username + Password
+       |
+       v
+User Repository
+       |
+       v
+Password Verification
+       |
+       v
+JWT Access Token
+       |
+       v
+Authorization: Bearer <token>
+```
+
+Example:
+
+```http
+Authorization: Bearer <access-token>
+```
+
+Protected routes validate the JWT before processing the request.
+
+---
+
+# Authorization
+
+Authentication determines:
+
+```text
+Who are you?
+```
+
+Authorization determines:
+
+```text
+What are you allowed to do?
+```
+
+The application uses role-based permissions.
+
+Example:
+
+```text
+Employee
+   |
+   +--> ticket:create
+   +--> ticket:read
+   +--> chat:use
+   +--> knowledge:read
+```
+
+Administrative permissions are separated:
+
+```text
+Admin
+   |
+   +--> ticket:manage
+   +--> user:read
+   +--> user:manage
+   +--> configuration:read
+```
+
+Authorization is enforced server-side.
+
+---
+
+# Ticket Workflow
+
+```text
+Employee
+   |
+   v
+JWT Authentication
+   |
+   v
+Authorization
+   |
+   v
+Ticket API
+   |
+   v
+Ticket Service
+   |
+   v
+Helpdesk Ticket
+```
+
+The backend validates the authenticated user before allowing protected ticket operations.
+
+---
+
+# Knowledge Base
+
+The knowledge base is designed around Azure Blob Storage.
 
 ```text
 Helpdesk Agent
@@ -309,7 +356,13 @@ Helpdesk Agent
 Knowledge Service
       |
       v
-Azure Identity
+DefaultAzureCredential
+      |
+      v
+Managed Identity
+      |
+      v
+ Azure RBAC
       |
       v
 Azure Blob Storage
@@ -318,215 +371,194 @@ Azure Blob Storage
 IT Documentation
 ```
 
-The application uses identity-based authentication rather than storage account keys.
+The application should use read-only access where only document retrieval is required.
+
+Recommended role:
+
+```text
+Storage Blob Data Reader
+```
 
 ---
 
-# Azure Key Vault
+# Key Vault
 
-Key Vault provides secure secret retrieval.
+Sensitive application configuration can be retrieved from Azure Key Vault.
 
 ```text
- Application
-      |
-      v
+Application
+    |
+    v
 Key Vault Service
-      |
-      v
+    |
+    v
 DefaultAzureCredential
-      |
-      v
+    |
+    v
 Managed Identity
-      |
-      v
+    |
+    v
+Azure RBAC
+    |
+    v
 Azure Key Vault
 ```
 
-The application should never hardcode production secrets.
+Recommended access for secret retrieval:
+
+```text
+Key Vault Secrets User
+```
+
+The application should not require secret-management permissions unless explicitly needed.
 
 ---
 
 # AI Helpdesk Agent
 
-The AI foundation is implemented using separate agent and service layers.
+The project contains an AI-ready architecture.
 
 ```text
 Employee
     |
     v
-POST /chat
+Chat API
     |
     v
-HelpdeskAgent
+Helpdesk Agent
     |
     v
-AIService
+AI Service
     |
     v
 AI Provider
 ```
 
-The current AI provider is a placeholder implementation.
+The AI service is separated from the API and agent layers.
 
-The next phase will replace it with Azure OpenAI:
+This allows the provider implementation to evolve without tightly coupling the application API to a specific AI SDK.
 
-```text
-HelpdeskAgent
-    |
-    v
-AIService
-    |
-    v
-Azure OpenAI
-```
-
-The API and agent layers should not need to change when the provider is replaced.
-
----
-
-# Knowledge and AI Roadmap
-
-The future RAG architecture is:
+## Current AI Architecture
 
 ```text
-Employee
-    |
-    v
-Helpdesk Agent
-    |
-    +------------------+
-    |                  |
-    v                  v
-AI Service       Knowledge Service
-    |                  |
-    v                  v
-Azure OpenAI      Blob / Search
-    |                  |
-    +--------+---------+
-             |
-             v
-       Grounded Response
+app/
+├── agents/
+│   └── helpdesk_agent.py
+│
+├── services/
+│   └── ai_service.py
+│
+├── models/
+│   └── chat.py
+│
+└── api/
+    └── chat.py
 ```
 
-Future capabilities include:
-
-* Enterprise document retrieval
-* Context-aware troubleshooting
-* Knowledge-grounded responses
-* IT policy assistance
-* Automated ticket creation
-
----
-
-# Monitoring and Auditing
-
-The application includes an audit and logging foundation.
-
-```text
-          HTTP Request
-                |
-                v
-         Audit Middleware
-                |
-                v
-        Application Logging
-                |
-                v
-          OpenTelemetry
-                |
-                v
-Azure Monitor / Application Insights
-```
-
-Security-relevant events include:
-
-* Authentication events
-* Failed authentication
-* API requests
-* Authorization failures
-* Application errors
-
-Production monitoring will be expanded as the application moves toward deployment.
+The next major AI milestone is Azure OpenAI integration.
 
 ---
 
 # Security Model
 
-The project follows defense-in-depth principles.
+The application follows defense in depth.
 
-## Application Security
+```text
+User Authentication
+        |
+        v
+JWT Validation
+        |
+        v
+Application Authorization
+        |
+        v
+Azure Identity
+        |
+        v
+Azure RBAC
+        |
+        v
+Azure Resource
+```
 
-* JWT authentication
-* Password hashing
-* Role-based authorization
-* Protected API endpoints
-* Request validation
+Security principles include:
 
-## Azure Security
+* No secrets in source code
+* Environment-based configuration
+* JWT validation
+* Server-side authorization
+* Managed identity for Azure access
+* Least-privilege permissions
+* Protected Azure resources
+* Security-focused logging
 
-* Managed Identity
-* Azure RBAC
-* Key Vault
-* Identity-based resource access
+See:
 
-## Least Privilege
+```text
+docs/security-model.md
+```
 
-Only the minimum required permissions should be granted.
+for the detailed security model.
+
+---
+
+# Least Privilege
+
+Permissions should be limited to the smallest scope required.
 
 For example:
 
 ```text
-Required: Storage Blob Data Reader
+Required:
+Storage Blob Data Reader
 ```
 
-Preferred over:
-
-```text
-Storage Contributor
-```
-
-and:
+Avoid unnecessarily broad permissions:
 
 ```text
 Owner
+Contributor
 ```
 
-unless those permissions are explicitly required.
+Every new permission should have:
+
+1. A documented purpose
+2. A defined security boundary
+3. A documented compromise impact
+4. A review for permission reduction
 
 ---
 
 # Configuration
 
-Application configuration is managed using Pydantic Settings.
+Application configuration is managed through environment variables.
 
-Local configuration:
+Create the local configuration file:
 
-```text
-.env
-```
-
-Example configuration:
-
-```text
-APP_NAME
-ENVIRONMENT
-JWT_SECRET
-JWT_ALGORITHM
-JWT_EXPIRY_MINUTES
-AZURE_STORAGE_ACCOUNT
-AZURE_CONTAINER
-KEYVAULT_NAME
+```powershell
+copy .env.example .env
 ```
 
 The `.env` file must never be committed.
 
-Only:
+Example configuration:
 
-```text
-.env.example
+```env
+APP_NAME="Enterprise IT Helpdesk Agent"
+ENVIRONMENT="development"
+
+JWT_SECRET="local-development-secret"
+JWT_ALGORITHM="HS256"
+JWT_EXPIRY_MINUTES=480
+
+AZURE_STORAGE_ACCOUNT="storage-account"
+AZURE_CONTAINER="knowledge-base"
+
+KEYVAULT_NAME="keyvault-name"
 ```
 
-belongs in source control.
+Production secrets should be managed through appropriate Azure services rather than committed configuration files.
 
 ---
 
@@ -534,56 +566,51 @@ belongs in source control.
 
 ```text
 enterprise-it-helpdesk-agent/
-|
+│
 ├── app/
-│   |
 │   ├── agents/
-│   │   ├── __init__.py
 │   │   └── helpdesk_agent.py
-│   |
+│   │
 │   ├── api/
-│   │   ├── admin.py
 │   │   ├── auth.py
 │   │   ├── chat.py
 │   │   ├── configuration.py
-│   │   ├── knowledge.py
 │   │   └── tickets.py
-│   |
+│   │
 │   ├── core/
 │   │   ├── azure_identity.py
 │   │   ├── config.py
 │   │   ├── logging.py
 │   │   └── security.py
-│   |
+│   │
 │   ├── database/
 │   │   └── users.py
-│   |
+│   │
 │   ├── middleware/
-│   │   └── audit.py
-│   |
+│   │
 │   ├── models/
 │   │   ├── chat.py
 │   │   ├── ticket.py
 │   │   └── user.py
-│   |
+│   │
 │   ├── services/
 │   │   ├── ai_service.py
-│   │   ├── blob_storage.py
-│   │   └── key_vault.py
-│   |
+│   │   ├── keyvault_service.py
+│   │   └── storage_service.py
+│   │
 │   └── main.py
-|
+│
 ├── docs/
 │   ├── architecture.md
 │   ├── development.md
 │   └── security-model.md
-|
+│
 ├── tests/
 │   ├── test_azure_identity.py
 │   ├── test_config.py
 │   ├── test_token.py
 │   └── test_users.py
-|
+│
 ├── .env.example
 ├── .gitignore
 ├── pyproject.toml
@@ -595,6 +622,8 @@ enterprise-it-helpdesk-agent/
 
 # Local Development
 
+The project does not use Docker.
+
 ## Requirements
 
 Install:
@@ -604,17 +633,29 @@ Install:
 * Visual Studio Code
 * Azure CLI
 
-Python 3.14 is currently used for development.
-
-Verify:
+Verify Python:
 
 ```powershell
 python --version
 ```
 
+Verify Git:
+
+```powershell
+git --version
+```
+
+Verify Azure CLI:
+
+```powershell
+az --version
+```
+
 ---
 
-## Create Virtual Environment
+# Create Virtual Environment
+
+Windows:
 
 ```powershell
 python -m venv .venv
@@ -628,15 +669,16 @@ Activate:
 
 ---
 
-## Install Dependencies
+# Install Dependencies
 
 ```powershell
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
 ---
 
-## Configure Environment
+# Configure Environment
 
 ```powershell
 copy .env.example .env
@@ -644,7 +686,11 @@ copy .env.example .env
 
 Update `.env` with local development values.
 
-Never commit `.env`.
+Never commit:
+
+```text
+.env
+```
 
 ---
 
@@ -662,45 +708,47 @@ Application:
 http://localhost:8000
 ```
 
-Swagger:
+Swagger documentation:
 
 ```text
 http://localhost:8000/docs
 ```
 
-OpenAPI:
+ReDoc:
 
 ```text
-http://localhost:8000/openapi.json
+http://localhost:8000/redoc
 ```
 
 ---
 
 # Testing
 
-Run all tests:
+Run the complete test suite:
+
+```powershell
+pytest
+```
+
+Run with verbose output:
 
 ```powershell
 pytest -v
 ```
 
-Run test collection:
-
-```powershell
-pytest --collect-only -v
-```
-
 Run a specific test:
 
 ```powershell
-pytest tests/test_token.py -v
+pytest tests/test_token.py
 ```
 
 ---
 
 # Code Quality
 
-Run Ruff:
+## Ruff
+
+Run:
 
 ```powershell
 ruff check .
@@ -712,305 +760,229 @@ Automatically fix supported issues:
 ruff check . --fix
 ```
 
-Compile the application:
+---
+
+# Mypy
+
+Run:
+
+```powershell
+mypy .
+```
+
+The project uses static typing to catch problems before runtime.
+
+---
+
+# Python Compilation
+
+Run:
 
 ```powershell
 python -m compileall app
 ```
 
-The project should pass:
-
-```text
-Ruff
-Pylance
-Python compilation
-pytest
-```
-
-before changes are committed.
-
 ---
 
-# Azure Development
+# Recommended Validation
 
-Login:
-
-```powershell
-az login
-```
-
-Verify the active account:
+Before committing:
 
 ```powershell
-az account show
+ruff check .
+mypy .
+pytest
+python -m compileall app
 ```
 
-The application uses:
-
-```text
-DefaultAzureCredential
-```
-
-for Azure SDK authentication.
+All checks should pass before pushing changes.
 
 ---
 
 # Development Workflow
 
-Each development step follows:
+Development is organized into small, documented steps.
+
+For each development step:
 
 ```text
 Implement
-    |
-    v
-Update Tests
-    |
-    v
+   |
+   v
+Refactor
+   |
+   v
+ Test
+   |
+   v
+Run Ruff
+   |
+   v
+Run Mypy
+   |
+   v
 Update Documentation
-    |
-    v
-Ruff
-    |
-    v
-Compile
-    |
-    v
-Pytest
-    |
-    v
+   |
+   v
 Git Commit
+   |
+   v
+Git Push
 ```
 
-Example:
-
-```powershell
-ruff check .
-python -m compileall app
-pytest -v
-```
-
-Then commit:
-
-```powershell
-git add .
-git commit -m "feat: add feature description"
-git push origin main
-```
-
----
-
-# Development Roadmap
-
-## Step 1 — Repository Foundation
-
-Completed:
-
-* Python project structure
-* Dependency management
-* Git configuration
-
-## Step 2 — Configuration Management
-
-Completed:
-
-* Pydantic Settings
-* Environment configuration
-* `.env` support
-
-## Step 3 — Azure Identity Foundation
-
-Completed:
-
-* `DefaultAzureCredential`
-* Azure CLI development authentication
-* Managed Identity-ready architecture
-
-## Step 4 — User and Password Security
-
-Completed:
-
-* User model
-* Password hashing
-* User repository
-* Role support
-
-## Step 5 — Authentication
-
-Completed:
-
-* Login API
-* JWT generation
-* Password verification
-* Protected authentication flow
-
-## Step 6 — Helpdesk Tickets
-
-Completed:
-
-* Ticket model
-* Ticket API
-* Protected ticket endpoints
-
-## Step 7 — Azure Blob Storage
-
-Completed:
-
-* Blob Storage service
-* Managed Identity authentication
-* Knowledge base endpoint
-
-## Step 8 — Azure Key Vault
-
-Completed:
-
-* Key Vault service
-* Secret retrieval pattern
-* Managed Identity authentication
-
-## Step 9 — Authorization
-
-Completed:
-
-* Application RBAC
-* Employee/Admin roles
-* Permission model
-* Protected administrative endpoints
-
-## Step 10 — Least Privilege
-
-Completed:
-
-* Azure RBAC model
-* Managed Identity permissions
-* Resource access boundaries
-* Least-privilege security review
-
-## Step 11 — Security Hardening
-
-Completed:
-
-* Structured logging
-* Audit middleware
-* Authentication event logging
-* Monitoring foundation
-
-## Step 12 — AI Helpdesk Agent Foundation
-
-Completed:
-
-* Chat request/response models
-* AI service abstraction
-* Helpdesk agent orchestration
-* Protected `/chat` endpoint
-* AI workflow foundation
-
-## Step 13 — Azure OpenAI Integration
-
-Next:
-
-* Azure OpenAI client
-* Managed Identity authentication
-* Model configuration
-* Production AI service
-* Prompt management
-* AI error handling
-* AI service tests
-
-## Step 14 — RAG Knowledge Base
-
-Planned:
-
-* Document ingestion
-* Chunking
-* Embeddings
-* Vector/search layer
-* Context retrieval
-* Grounded responses
-
-## Step 15 — ITSM Automation
-
-Planned:
-
-* Ticket automation
-* Workflow orchestration
-* ITSM integration
-* Agent actions
-* Approval workflows
-
----
-
-# Security Rules
-
-Always:
-
-* Use environment variables for local configuration
-* Never commit `.env`
-* Never hardcode secrets
-* Use Managed Identity for Azure resources
-* Use Azure RBAC
-* Apply least privilege
-* Protect sensitive endpoints
-* Validate authentication and authorization
-* Audit security-relevant operations
-* Keep dependencies and documentation synchronized
-
-Never:
-
-* Commit passwords
-* Commit API keys
-* Commit Azure credentials
-* Use `Owner` when a narrower role is sufficient
-* Store production secrets in source code
+Documentation should be updated whenever architecture, security, configuration, or development procedures change.
 
 ---
 
 # Documentation
 
-Project documentation is maintained in:
+Important documentation:
 
-```text
-docs/
-├── architecture.md
-├── development.md
-└── security-model.md
-```
+| Document                 | Purpose                                                     |
+| ------------------------ | ----------------------------------------------------------- |
+| `docs/development.md`    | Development workflow and setup                              |
+| `docs/architecture.md`   | Application and Azure architecture                          |
+| `docs/security-model.md` | Authentication, authorization, identity and least privilege |
 
-When architecture or security behavior changes, update the relevant documentation in the same commit.
+---
+
+# Development Roadmap
+
+## Phase 1 — Repository Foundation
+
+Completed:
+
+* Python project structure
+* Git repository
+* Dependency management
+* Development environment
+
+## Phase 2 — Configuration and Security
+
+Completed:
+
+* Pydantic Settings
+* Environment configuration
+* Password hashing
+* JWT authentication
+* Protected API endpoints
+
+## Phase 3 — Authorization
+
+Completed:
+
+* Application roles
+* Permission model
+* Protected endpoints
+* Employee/Admin separation
+
+## Phase 4 — Azure Identity
+
+Completed:
+
+* Azure Identity integration
+* `DefaultAzureCredential`
+* Managed Identity-ready architecture
+* Azure CLI development authentication
+
+## Phase 5 — Azure Services
+
+Completed:
+
+* Azure Blob Storage integration
+* Azure Key Vault integration
+* Identity-based Azure access
+* Least-privilege security model
+
+## Phase 6 — Helpdesk Agent Foundation
+
+Completed:
+
+* Chat request/response models
+* Chat API
+* Helpdesk agent abstraction
+* AI service abstraction
+
+## Phase 7 — Azure OpenAI
+
+**Current development step**
+
+Planned:
+
+* Azure OpenAI client integration
+* Secure Azure authentication
+* Model configuration
+* Chat completion workflow
+* AI service error handling
+* AI request/response logging
+* Token and request safeguards
+
+## Phase 8 — Knowledge Retrieval
+
+Planned:
+
+* Knowledge-base retrieval
+* Document processing
+* RAG pipeline
+* Retrieval authorization
+* Grounded AI responses
+
+## Phase 9 — ITSM Automation
+
+Planned:
+
+* Ticket creation through AI
+* Ticket classification
+* Priority detection
+* Assignment workflows
+* ITSM integration
+
+## Phase 10 — Production Hardening
+
+Planned:
+
+* Azure RBAC deployment
+* Application monitoring
+* Security alerting
+* Audit logging
+* Dependency scanning
+* Security testing
+* Production identity integration
 
 ---
 
 # Git Commit Convention
 
-Use Conventional Commit-style messages.
+Use Conventional Commits.
 
 Feature:
 
 ```text
-feat: add azure openai service
+feat: add feature name
 ```
 
 Bug fix:
 
 ```text
-fix: correct jwt validation
-```
-
-Refactoring:
-
-```text
-refactor: simplify authentication service
+fix: correct issue description
 ```
 
 Documentation:
 
 ```text
-docs: update architecture documentation
+docs: update documentation
 ```
 
-Tests:
+Refactoring:
 
 ```text
-test: add chat endpoint coverage
+refactor: improve component name
+```
+
+Testing:
+
+```text
+test: add authentication tests
 ```
 
 Maintenance:
@@ -1019,28 +991,64 @@ Maintenance:
 chore: update dependencies
 ```
 
+Example:
+
+```powershell
+git add .
+git commit -m "feat: integrate azure openai service"
+git push origin main
+```
+
 ---
 
-# Project Status
+# Security Rules
 
-The project has completed its **identity, authentication, authorization, Azure resource access, least-privilege, monitoring, and AI-agent foundation**.
+Always:
 
-The next major development milestone is:
+* Never commit `.env`
+* Never hardcode secrets
+* Never log passwords
+* Never log access tokens
+* Validate JWTs before protected operations
+* Enforce authorization on the backend
+* Use managed identity for Azure resources
+* Prefer Azure RBAC over shared credentials
+* Use the smallest required permission
+* Keep Azure access read-only where possible
+* Update security documentation when permissions change
 
-```text
-Azure OpenAI Integration
-```
+---
 
-followed by:
+# Project Principles
 
-```text
-RAG Knowledge Base
-        |
-        v
-ITSM Automation
-        |
-        v
-Production Hardening
-```
+## Secure by Default
 
-The long-term goal is a secure, auditable enterprise IT support agent capable of combining employee identity, enterprise knowledge, AI reasoning, and controlled ITSM actions.
+Security controls should be part of the application architecture rather than added later.
+
+## Least Privilege
+
+Every identity should receive only the permissions it requires.
+
+## Separation of Responsibilities
+
+Authentication, authorization, business logic, Azure services, and AI services should remain independently testable.
+
+## Provider Abstraction
+
+AI providers should be accessed through an application service layer rather than directly from API routes.
+
+## Documentation as Code
+
+Architecture and security documentation should evolve with the implementation.
+
+## Small Commits
+
+Each development step should produce a focused, reviewable Git commit.
+
+---
+
+# License
+
+This project is currently intended as an enterprise IT Helpdesk Agent development project.
+
+Add an explicit open-source license before publishing the repository for external reuse.

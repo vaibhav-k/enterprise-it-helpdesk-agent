@@ -1,16 +1,29 @@
-# Enterprise IT Helpdesk Agent Development Guide
+# Enterprise IT Helpdesk Agent — Development Guide
 
 ## Overview
 
-This document explains how to set up, run, test, and contribute to the Enterprise IT Helpdesk Agent project.
+This document explains how to set up, run, test, and contribute to the Enterprise IT Helpdesk Agent.
 
-The project is developed without Docker and uses a standard Python virtual environment workflow.
+The project is developed **without Docker** and uses a standard Python virtual environment workflow.
+
+Current development areas include:
+
+* Application configuration
+* JWT authentication
+* Application authorization
+* Azure Managed Identity
+* Azure Blob Storage
+* Azure Key Vault
+* Azure OpenAI integration
+* Identity-based Azure authentication
+* Automated testing
+* Static type checking
 
 ---
 
-# Development Environment
+## Development Environment
 
-## Requirements
+### Requirements
 
 Install:
 
@@ -39,7 +52,7 @@ az --version
 
 ---
 
-# Repository Setup
+## Repository Setup
 
 Clone the repository:
 
@@ -47,7 +60,7 @@ Clone the repository:
 git clone https://github.com/vaibhav-k/enterprise-it-helpdesk-agent.git
 ```
 
-Move into the project folder:
+Move into the project directory:
 
 ```powershell
 cd enterprise-it-helpdesk-agent
@@ -55,9 +68,9 @@ cd enterprise-it-helpdesk-agent
 
 ---
 
-# Python Environment Setup
+## Python Environment Setup
 
-## Create Virtual Environment
+### Create Virtual Environment
 
 Windows:
 
@@ -65,19 +78,19 @@ Windows:
 python -m venv .venv
 ```
 
-Activate:
+### Activate Virtual Environment
 
 ```powershell
 .venv\Scripts\activate
 ```
 
-Verify:
+Confirm the Python environment:
 
 ```powershell
 python --version
 ```
 
-The terminal prompt should display:
+The terminal should show the active virtual environment:
 
 ```text
 (.venv)
@@ -85,7 +98,7 @@ The terminal prompt should display:
 
 ---
 
-# Install Dependencies
+## Install Dependencies
 
 Install project dependencies:
 
@@ -93,7 +106,7 @@ Install project dependencies:
 pip install -r requirements.txt
 ```
 
-Verify installation:
+Verify installed packages:
 
 ```powershell
 pip list
@@ -101,34 +114,31 @@ pip list
 
 ---
 
-# Environment Configuration
+## Environment Configuration
 
-Create a local configuration file:
+Create a local environment file:
 
 ```powershell
 copy .env.example .env
 ```
 
-Example:
+The application uses environment variables for configuration.
+
+Example Azure OpenAI configuration:
 
 ```env
-APP_NAME="Enterprise IT Helpdesk Agent"
+AZURE_OPENAI_ENDPOINT=""
+AZURE_OPENAI_DEPLOYMENT=""
+AZURE_OPENAI_API_VERSION=""
+AZURE_OPENAI_ENABLED="false"
+```
 
-JWT_SECRET="local-development-secret"
+The application does **not** use an Azure OpenAI API key.
 
-JWT_ALGORITHM="HS256"
+Do not add:
 
-JWT_EXPIRY_MINUTES=480
-
-AZURE_STORAGE_ACCOUNT="storage-account"
-
-AZURE_CONTAINER="knowledge-base"
-
-KEYVAULT_NAME="keyvault-name"
-
-ENVIRONMENT="development"
-
-ENABLE_AUDIT_LOGGING=true
+```env
+AZURE_OPENAI_API_KEY
 ```
 
 Never commit:
@@ -137,7 +147,7 @@ Never commit:
 .env
 ```
 
-Only commit:
+Only the following template should be committed:
 
 ```text
 .env.example
@@ -145,71 +155,103 @@ Only commit:
 
 ---
 
-# Azure Development Setup
+## Azure Development Authentication
 
-## Login
+The application uses:
+
+```text
+DefaultAzureCredential
+```
+
+This provides a common authentication abstraction for local development and Azure hosting.
+
+### Local Development
+
+```text
+Developer Machine
+        |
+        v
+    Azure CLI
+        |
+        v
+DefaultAzureCredential
+        |
+        v
+    Azure SDK
+        |
+        v
+ Azure Resource
+```
+
+Authenticate with Azure:
 
 ```powershell
 az login
 ```
 
-Verify the active account:
+Verify the active Azure account:
 
 ```powershell
 az account show
 ```
 
-The application authenticates using:
+### Azure Hosting
 
 ```text
-DefaultAzureCredential
-```
-
-### Local Development
-
-```text
-
-Developer Machine
-
+Azure Application
         |
-
-Azure CLI Login
-
-        |
-
-DefaultAzureCredential
-
-        |
-
-Azure SDK Client
-
-```
-
-### Azure Deployment
-
-```text
-
-Application
-
-        |
-
+        v
 Managed Identity
-
         |
-
+        v
 DefaultAzureCredential
-
         |
+        v
+    Azure RBAC
+        |
+        v
+ Azure Resource
+```
 
-Azure Resource
+The same application authentication abstraction is used in both environments.
 
+---
+
+## Azure OpenAI Configuration
+
+The Azure OpenAI integration requires:
+
+```text
+AZURE_OPENAI_ENDPOINT
+AZURE_OPENAI_DEPLOYMENT
+AZURE_OPENAI_API_VERSION
+AZURE_OPENAI_ENABLED
+```
+
+Example:
+
+```env
+AZURE_OPENAI_ENDPOINT="https://<resource-name>.openai.azure.com"
+AZURE_OPENAI_DEPLOYMENT="<deployment-name>"
+AZURE_OPENAI_API_VERSION="<api-version>"
+AZURE_OPENAI_ENABLED="true"
+```
+
+These values identify the Azure OpenAI resource and deployment.
+
+They are not authentication credentials.
+
+Authentication is handled through:
+
+```text
+DefaultAzureCredential
 ```
 
 ---
 
-# Running the Application
+## Running the Application
 
-Start the development server:
+Start the FastAPI development server:
 
 ```powershell
 uvicorn app.main:app --reload
@@ -221,58 +263,74 @@ Application:
 http://localhost:8000
 ```
 
-Swagger UI:
+Swagger API documentation:
 
 ```text
 http://localhost:8000/docs
 ```
 
-OpenAPI schema:
+---
 
-```text
-http://localhost:8000/openapi.json
+## Testing
+
+Run all tests:
+
+```powershell
+pytest -v
+```
+
+Run a specific test:
+
+```powershell
+pytest tests/test_azure_openai.py -v
 ```
 
 ---
 
-# Validation
+## Static Analysis
 
-## Compile Python Files
+### Ruff
 
-```powershell
-python -m compileall app
-```
-
-## Ruff
+Run:
 
 ```powershell
 ruff check .
 ```
 
-## Git Status
+### Mypy
+
+Run:
 
 ```powershell
-git status
+mypy .
 ```
 
-## Run the API
+### Python Compilation
+
+Run:
 
 ```powershell
-uvicorn app.main:app --reload
+python -m compileall app
 ```
-
-Verify:
-
-* Home endpoint (`/`)
-* Swagger UI (`/docs`)
-* Authentication
-* Ticket API
-* Knowledge API
-* Admin API
 
 ---
 
-# VS Code Configuration
+## Recommended Validation
+
+Before committing code, run:
+
+```powershell
+ruff check .
+python -m compileall app
+mypy .
+pytest -v
+```
+
+All checks should pass before creating a commit.
+
+---
+
+## VS Code
 
 Recommended extensions:
 
@@ -280,11 +338,15 @@ Recommended extensions:
 * Pylance
 * Ruff
 
-Project configuration:
+The project uses strict type checking and static analysis.
+
+Configuration is maintained in:
 
 ```text
 pyproject.toml
 ```
+
+and:
 
 ```text
 .vscode/settings.json
@@ -292,66 +354,71 @@ pyproject.toml
 
 ---
 
-# Development Workflow
-
-Each feature follows the same workflow.
-
-## 1. Create Feature
-
-Example:
+## Application Structure
 
 ```text
-Add Azure Blob Storage service
-```
-
-## 2. Implement
-
-Follow these guidelines:
-
-* Type hints
-* Docstrings
-* Small modules
-* Separation of concerns
-* Pylance clean
-* Ruff clean
-
-## 3. Update Documentation
-
-Update relevant files:
-
-```text
-README.md
-
-docs/
-    architecture.md
-    security-model.md
-    development.md
-```
-
-## 4. Validate
-
-Run:
-
-```powershell
-python -m compileall app
-ruff check .
-```
-
-## 5. Commit
-
-Example:
-
-```powershell
-git add .
-
-git commit -m "feat: add azure blob storage integration"
+app/
+├── agents/
+│   └── helpdesk_agent.py
+│
+├── api/
+│   ├── auth.py
+│   ├── chat.py
+│   ├── configuration.py
+│   └── tickets.py
+│
+├── core/
+│   ├── azure_identity.py
+│   ├── config.py
+│   ├── logging.py
+│   └── security.py
+│
+├── database/
+│   └── users.py
+│
+├── models/
+│   ├── chat.py
+│   ├── ticket.py
+│   └── user.py
+│
+└── services/
+    ├── ai_service.py
+    ├── azure_openai_service.py
+    ├── keyvault_service.py
+    └── storage_service.py
 ```
 
 ---
 
-# Current Development Milestones
+## Azure OpenAI Service Design
 
-## Step 1 — Repository Foundation
+Azure OpenAI access is isolated inside the service layer.
+
+```text
+Chat API
+   |
+   v
+Helpdesk Agent
+   |
+   v
+AI Service
+   |
+   v
+Azure OpenAI Service
+   |
+   v
+DefaultAzureCredential
+```
+
+The agent does not directly create Azure OpenAI clients.
+
+This keeps provider-specific implementation details isolated from application and agent logic.
+
+---
+
+## Development Milestones
+
+### Step 1 — Repository Foundation
 
 Completed:
 
@@ -359,7 +426,7 @@ Completed:
 * Dependency management
 * Git configuration
 
-## Step 2 — Configuration Management
+### Step 2 — Configuration Management
 
 Completed:
 
@@ -367,167 +434,173 @@ Completed:
 * Environment variables
 * Application configuration
 
-## Step 3 — Azure Identity Foundation
+### Step 3 — Azure Identity Foundation
 
 Completed:
 
-* DefaultAzureCredential
-* Azure identity abstraction
-* Managed Identity ready architecture
-* Azure CLI authentication support
+* `DefaultAzureCredential`
+* Managed Identity-ready design
+* Azure CLI development authentication
 
-## Step 4 — User Repository and Password Security
+### Step 4 — User Repository and Password Security
 
 Completed:
 
 * User model
 * Password hashing
 * User repository
-* Role support
+* User roles
 
-## Step 5 — Authentication API
+### Step 5 — Authentication API
 
 Completed:
 
-* Login endpoint
+* Login API
 * JWT generation
-* Password verification
-* Protected authentication flow
+* Token validation
+* Authentication dependency
 
-## Step 6 — Helpdesk Ticket API
+### Step 6 — Helpdesk Ticket API
 
 Completed:
 
-* Ticket models
-* Ticket API
-* Protected endpoints
-* JWT authentication
+* Ticket model
+* Protected ticket API
+* JWT-protected routes
+* Authorization foundation
 
-## Step 7 — Azure Blob Storage Integration
+### Step 7 — Azure Blob Storage
 
 Completed:
 
 * Blob Storage service
+* Identity-based authentication
 * Knowledge base endpoint
-* Managed Identity authentication
-* Storage security model
+* Storage security documentation
 
-## Step 8 — Azure Key Vault Integration
+### Step 8 — Azure Key Vault
 
 Completed:
 
 * Key Vault service
-* Secret retrieval
-* Managed Identity authentication
-* Key Vault RBAC documentation
+* Identity-based authentication
+* Secret retrieval pattern
+* Key Vault security documentation
 
-## Step 9 — Authorization Model
+### Step 9 — Application Authorization
 
 Completed:
 
-* Application RBAC
+* Application roles
 * Permission model
-* Employee/Admin roles
 * Protected endpoints
+* Employee/Admin separation
 
-## Step 10 — Azure RBAC and Least Privilege
+### Step 10 — Azure RBAC and Least Privilege
 
 Completed:
 
 * Azure RBAC model
-* Managed Identity permission mapping
-* Least privilege review
+* Managed Identity permission model
+* Least privilege documentation
 * Resource access boundaries
-* Security documentation
 
-## Step 11 — Production Security Hardening
-
-Completed:
-
-* Structured logging
-* Audit middleware
-* Authentication event logging
-* Monitoring architecture
-* Application Insights integration foundation
-
-## Step 12 — AI Helpdesk Agent Foundation
+### Step 11 — Production Hardening Foundation
 
 Completed:
 
-- Chat request and response models
-- AI service abstraction
-- Helpdesk agent orchestration
-- Authenticated chat API endpoint
-- AI workflow testing
-- Documentation updates
+* Application logging
+* Audit logging foundation
+* Monitoring integration foundation
+* Security validation workflow
+
+### Step 12 — AI-Ready Application Architecture
+
+Completed:
+
+* Chat model
+* Chat API
+* Helpdesk Agent
+* AI service abstraction
+
+### Step 13.1 — Azure OpenAI Identity-Based Service
+
+Current:
+
+* Azure OpenAI configuration
+* Azure OpenAI service boundary
+* `DefaultAzureCredential` integration
+* API-key-free authentication design
+* Azure OpenAI service validation test
 
 ---
 
-# Upcoming Development
+## Development Workflow
 
-## Step 13 — RAG Knowledge Base
+### 1. Implement
 
-Planned:
+Follow:
 
-* Knowledge retrieval
-* Document search
-* Context generation
+* Type hints
+* Small modules
+* Clear responsibilities
+* Dependency injection
+* Secure defaults
 
-## Step 14 — ITSM Integration
+### 2. Test
 
-Planned:
+```powershell
+pytest -v
+```
 
-* Ticket workflow automation
-* External ITSM integration
-* Service operations
+### 3. Static Analysis
+
+```powershell
+ruff check .
+mypy .
+```
+
+### 4. Compile
+
+```powershell
+python -m compileall app
+```
+
+### 5. Update Documentation
+
+Update relevant files:
+
+```text
+README.md
+docs/development.md
+docs/architecture.md
+docs/security-model.md
+```
+
+### 6. Commit
+
+Example:
+
+```powershell
+git add .
+git commit -m "feat: add azure openai identity based service foundation"
+git push origin main
+```
 
 ---
 
-# Git Commit Convention
-
-Use conventional commit format:
-
-Feature:
-
-```text
-feat: add feature name
-```
-
-Documentation:
-
-```text
-docs: update documentation
-```
-
-Maintenance:
-
-```text
-chore: update tooling
-```
-
-Bug Fix:
-
-```text
-fix: correct issue description
-```
-
-Refactoring:
-
-```text
-refactor: improve internal implementation
-```
-
----
-
-# Security Development Rules
+## Security Development Rules
 
 Always:
 
-* Use environment variables
-* Avoid hardcoded secrets
-* Use Managed Identity for Azure authentication
-* Apply least privilege principles
-* Protect endpoints with authentication and authorization
-* Review RBAC assignments before deployment
-* Keep documentation synchronized with implementation
-* Ensure the project remains free of Pylance and Ruff errors before committing
+* Use environment variables for configuration.
+* Never commit secrets.
+* Do not use Azure service keys when Managed Identity is appropriate.
+* Use `DefaultAzureCredential` for Azure authentication.
+* Keep Azure RBAC permissions minimal.
+* Validate authenticated users.
+* Apply application-level authorization.
+* Do not expose Key Vault secrets unnecessarily.
+* Keep Azure SDK code inside service boundaries.
+* Maintain automated tests.
+* Run Ruff and mypy before commits.

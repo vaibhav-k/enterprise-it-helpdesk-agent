@@ -1,688 +1,864 @@
-# Enterprise IT Helpdesk Agent Security Model
-
+# Enterprise IT Helpdesk Agent — Security Model
 
 ## Overview
 
-Security is a core design requirement of the Enterprise IT Helpdesk Agent.
+The Enterprise IT Helpdesk Agent follows a layered security model designed for enterprise application development.
 
-The application follows enterprise security principles:
+The current implementation uses:
 
-- Identity-based authentication
-- Least privilege access
-- Secure configuration management
-- Separation of application and infrastructure security
+* JWT-based user authentication
+* Password hashing
+* Role-based application authorization
+* Azure Managed Identity
+* Azure RBAC-ready resource access
+* Azure Key Vault integration
+* Azure Blob Storage integration
+* Audit and security logging
+* Least-privilege design
 
+The application does **not** use Microsoft Entra ID for user authentication in the current development phase.
+
+Azure identity is used for **application-to-Azure-resource authentication**, while application users are authenticated through the internal development user repository.
+
+---
 
 # Security Architecture
 
-
-```
-
-+----------------------+
-|        User          |
-+----------+-----------+
-           |
-           |
-           v
-+----------------------+
-|   FastAPI Service    |
-|                      |
-| Authentication       |
-| Authorization        |
-+----------+-----------+
-           |
-           |
-           v
-+----------------------+
-| Azure Identity Layer |
-|                      |
-| DefaultAzureCredential|
-+----------+-----------+
-           |
-           |
-           v
-+----------------------+
-|  Azure Resources    |
-|                      |
-| Storage              |
-| Key Vault            |
-+----------------------+
-
-```
-
-
-# Authentication Model
-
-
-## Application Authentication
-
-The application authentication layer is responsible for:
-
-- Identifying users
-- Validating credentials
-- Creating authentication tokens
-
-
-Current implementation:
-
-```
-
-Username
-
-    |
-
-Password Verification
-
-    |
-
-JWT Token
-
-    |
-
-Authenticated Request
-
-```
-
-
-Passwords are never stored as plain text.
-
-Password storage uses:
-
-```
-
-bcrypt hashing
-
-```
-
-
-# Authorization Model
-
-
-Authentication answers:
-
-```
-
-Who are you?
-
-```
-
-
-Authorization answers:
-
-```
-
-What are you allowed to do?
-
-```
-
-
-The application uses role-based authorization.
-
-
-Current roles:
-
-
-## Employee
-
-Permissions:
-
-- Create helpdesk tickets
-- Access permitted application features
-
-
-## Admin
-
-Permissions:
-
-- Administrative operations
-- User management (future)
-
-
-# Azure Authorization Model
-
-
-Application authorization and Azure authorization are separate layers.
-
-
-Application Layer:
+The application separates security into two major boundaries:
 
 ```text
+                    User
+                      |
+                      v
+              +---------------+
+              | Authentication|
+              |     Layer     |
+              +-------+-------+
+                      |
+                    JWT
+                      |
+                      v
+              +---------------+
+              | Authorization |
+              |     Layer     |
+              +-------+-------+
+                      |
+                Role / Permission
+                      |
+                      v
+              +---------------+
+              | Application   |
+              |     APIs      |
+              +-------+-------+
+                      |
+                      v
+              +---------------+
+              | Azure Identity|
+              |     Layer     |
+              +-------+-------+
+                      |
+              DefaultAzureCredential
+                      |
+                      v
+              +---------------+
+              | Azure RBAC    |
+              +-------+-------+
+                      |
+          +-----------+-----------+
+          |                       |
+          v                       v
+     Blob Storage             Key Vault
+```
 
+---
+
+# Authentication
+
+## Current Authentication Model
+
+Application users authenticate through the internal user repository.
+
+Authentication flow:
+
+```text
 User
-
  |
-
-JWT Role
-
+ | username + password
+ v
+Login API
     |
-
-Application Permission
-
+    v
+User Repository
+    |
+    v
+Password Verification
+    |
+    v
+JWT Access Token
+    |
+    v
+Protected API
 ```
 
-Azure Layer:
+The application does not currently depend on Microsoft Entra ID for end-user authentication.
+
+This keeps the current development environment simple while allowing the application security model to evolve later.
+
+---
+
+# Password Security
+
+Passwords must never be stored in plaintext.
+
+The application stores password hashes rather than original passwords.
 
 ```text
-
-Application
-
-|
-
-Managed Identity
-
-|
-
-Azure RBAC
-
-|
-
-Azure Resource
-
-```
-
-Both layers must allow access.
-
-
-# Security Monitoring
-
-
-Security events are logged for:
-
-- Login success
-- Login failures
-- API access
-- Authorization failures
-
-
-Monitoring flow:
-
-```text
-
-Application
-
-    |
-
-Audit Middleware
-
-        |
-
-Application Insights
-
-```
-
-# Azure Identity Security
-
-
-## DefaultAzureCredential
-
-
-The application uses:
-
-
-```
-
-DefaultAzureCredential
-
-```
-
-
-This provides automatic credential selection.
-
-
-## Local Development
-
-
-Authentication source:
-
-```
-
-Azure CLI Credential
-
-```
-
-
-Flow:
-
-
-```
-
-Developer
-
-    |
-
-az login
-
-    |
-
-Azure CLI Token
-
-    |
-
-Application
-
-```
-
-
-## Production
-
-
-Authentication source:
-
-```
-
-Managed Identity
-
-```
-
-
-Flow:
-
-
-```
-
-Application Hosting Platform
-
-                |
-
-System Assigned Managed Identity
-
-    |
-
-Azure RBAC
-
-    |
-
-Azure Resource
-
-```
-
-
-# Secret Management
-
-
-The application must never store:
-
-
-- Azure access keys
-- Database passwords
-- API secrets
-- Connection strings
-
-
-Avoid:
-
-
-```
-
-password = "secret123"
-
-storage_key = "xxxx"
-
-```
-
-
-Use:
-
-
-```
-
-Environment Configuration
-
-        +
-
-Managed Identity
-
-        +
-
-Azure Key Vault
-
-```
-
-
-# Least Privilege Design
-
-
-Every component should receive only the minimum permissions required.
-
-
-Example:
-
-
-## Knowledge Base Storage
-
-
-Required:
-
-```
-
-Storage Blob Data Reader
-
-```
-
-
-Reason:
-
-Read IT documentation.
-
-
-Not required:
-
-```
-
-Storage Blob Data Contributor
-
-```
-
-
-Reason:
-
-The application does not modify documents.
-
-
-# Azure RBAC Model
-
-
-Future resource permissions:
-
-
-```
-
-Helpdesk Agent Identity
-
-            |
-
-Azure Role Assignment
-
-            |
-
-Specific Azure Resource
-
-```
-
-
-Example:
-
-
-```
-
-Managed Identity
-
-        |
-
-Storage Blob Data Reader
-
-        |
-
-Knowledge Base Container
-
-```
-
-# Application User Security
-
-
-Current development implementation:
-
-```text
-Username
-
-    |
-
+Password
+   |
+   v
+Password Hashing
+   |
+   v
 Password Hash
-
-    |
-
-bcrypt Verification
-
-    |
-
-Application Token
+   |
+   v
+User Repository
 ```
 
+During authentication:
 
-Passwords are **never** stored as plain text.
+```text
+Submitted Password
+        |
+        v
+Password Verification
+        |
+        v
+Stored Password Hash
+```
 
+The application should never log:
 
-Future production options:
+* Passwords
+* Password hashes
+* Authentication secrets
+* JWT signing secrets
 
-- Enterprise identity integration
-- Database-backed user management
-- Centralized identity provider
-
+---
 
 # JWT Authentication
 
+Protected APIs use JSON Web Tokens.
 
-Current authentication flow:
-
+Authentication flow:
 
 ```text
+POST /auth/login
+        |
+        v
+Credential Validation
+        |
+        v
+JWT Creation
+        |
+        v
+Access Token
+        |
+        v
+Authorization Header
+        |
+        v
+Protected Endpoint
+```
 
+Clients send the token using:
+
+```http
+Authorization: Bearer <token>
+```
+
+JWT configuration is controlled through application settings.
+
+Example:
+
+```env
+JWT_SECRET=local-development-secret
+JWT_ALGORITHM=HS256
+JWT_EXPIRY_MINUTES=480
+```
+
+The JWT secret must never be committed to Git.
+
+---
+
+# JWT Claims
+
+The application can use claims such as:
+
+```json
+{
+  "sub": "employee",
+  "role": "employee"
+}
+```
+
+The `sub` claim identifies the authenticated user.
+
+The `role` claim is used by the application authorization layer.
+
+JWT claims must be treated as untrusted input until the token has been successfully:
+
+1. Parsed
+2. Cryptographically verified
+3. Checked for expiration
+4. Validated for required claims
+
+---
+
+# Authorization
+
+Authentication answers:
+
+```text
+Who is the user?
+```
+
+Authorization answers:
+
+```text
+What is the user allowed to do?
+```
+
+The application uses role-based authorization.
+
+Current conceptual model:
+
+```text
 User
-
  |
-
-Username + Password
-
-        |
-
-bcrypt Verification
-
-    |
-
-JWT Token
-
-    |
-
-Authorized Request
-
+ v
+Role
+ |
+ v
+Permission
+ |
+ v
+API Endpoint
 ```
 
+---
 
-JWT tokens contain:
+# Application Roles
 
-- Username
-- Role
-- Expiration time
+## Employee
 
+Employees can perform normal helpdesk operations.
 
-# API Authorization
-
-
-Protected APIs require:
-
-- Valid JWT token
-- Authenticated user identity
-
-
-Current flow:
-
+Example permissions:
 
 ```text
+ticket:create
+ticket:read
+chat:use
+knowledge:read
+```
 
+Employees should not be allowed to perform administrative operations.
+
+---
+
+## Admin
+
+Administrators have additional operational permissions.
+
+Example permissions:
+
+```text
+ticket:create
+ticket:read
+ticket:manage
+user:read
+user:manage
+configuration:read
+```
+
+Administrative permissions should only be granted where required.
+
+---
+
+# Authorization Example
+
+```text
+Employee
+   |
+   +--> Create Ticket       ALLOW
+   |
+   +--> Read Knowledge      ALLOW
+   |
+   +--> Use Helpdesk Chat   ALLOW
+   |
+   +--> Manage Users        DENY
+```
+
+```text
+Admin
+   |
+   +--> Create Ticket       ALLOW
+   |
+   +--> Manage Tickets      ALLOW
+   |
+   +--> Manage Users        ALLOW
+```
+
+Authorization must be enforced by the backend.
+
+The application must not rely on frontend controls for security.
+
+---
+
+# FastAPI Dependency Security
+
+Protected endpoints should use FastAPI dependencies for authentication and authorization.
+
+Conceptually:
+
+```text
 Request
-
-    |
-
-Bearer Token
-
-    |
-
-JWT Validation
-
-    |
-
-User Identity
-
-    |
-
-API Access
-
+   |
+   v
+Authentication Dependency
+   |
+   v
+Current User
+   |
+   v
+Authorization Dependency
+   |
+   v
+Endpoint
 ```
 
+This keeps security checks centralized and reusable.
 
-# Storage Security
+FastAPI dependency injection should use `Annotated` type hints for security dependencies.
 
+---
 
-Knowledge base access uses:
+# Azure Identity
+
+The application uses:
 
 ```text
+DefaultAzureCredential
+```
 
+for Azure SDK authentication.
+
+This provides a consistent credential mechanism across development and Azure-hosted environments.
+
+---
+
+# Local Azure Authentication
+
+During local development:
+
+```text
+Developer Machine
+       |
+       v
+Azure CLI Login
+       |
+       v
+DefaultAzureCredential
+       |
+       v
+Azure SDK
+       |
+       v
+Azure Resource
+```
+
+Developers can authenticate with:
+
+```powershell
+az login
+```
+
+and verify the active account with:
+
+```powershell
+az account show
+```
+
+---
+
+# Azure Hosting Authentication
+
+In Azure, the application should use a managed identity.
+
+```text
+Azure Application
+       |
+       v
 Managed Identity
+       |
+       v
+DefaultAzureCredential
+       |
+       v
+Azure RBAC
+       |
+       v
+Azure Resource
+```
 
-        |
+This removes the need to store Azure client secrets or storage access keys in application configuration.
 
+---
+
+# Managed Identity Security
+
+Managed identity is used for application-to-Azure authentication.
+
+The application should not store:
+
+* Azure client secrets
+* Storage account keys
+* Azure service principal passwords
+* Long-lived Azure access tokens
+
+Instead:
+
+```text
+Application
+    |
+    v
+Managed Identity
+    |
+    v
+Microsoft Entra-backed Azure Identity
+    |
+    v
+Azure RBAC
+    |
+    v
+Resource
+```
+
+---
+
+# Azure Blob Storage Security
+
+The knowledge base uses Azure Blob Storage.
+
+Access flow:
+
+```text
+Helpdesk Agent
+      |
+      v
+Storage Service
+      |
+      v
+DefaultAzureCredential
+      |
+      v
+Managed Identity
+      |
+      v
+Azure RBAC
+      |
+      v
+Blob Storage
+```
+
+The application should use a read-only role when the agent only needs to retrieve knowledge documents.
+
+Recommended role:
+
+```text
+Storage Blob Data Reader
+```
+
+Avoid broad roles such as:
+
+```text
+Owner
+Contributor
+Storage Account Contributor
+```
+
+unless a specific application requirement justifies them.
+
+---
+
+# Azure Key Vault Security
+
+Key Vault is used for protected application secrets and configuration.
+
+Access flow:
+
+```text
+Application
+     |
+     v
+Key Vault Service
+     |
+     v
+DefaultAzureCredential
+     |
+     v
+Managed Identity
+     |
+     v
+Azure RBAC
+     |
+     v
+Key Vault
+```
+
+For applications that only need to retrieve secrets, use the smallest appropriate permission.
+
+Recommended role:
+
+```text
+Key Vault Secrets User
+```
+
+The application should not grant secret-management permissions unless secret creation or administration is actually required.
+
+---
+
+# Secret Management
+
+Sensitive values must remain outside source control.
+
+Examples:
+
+```text
+JWT_SECRET
+API_KEYS
+CONNECTION_STRINGS
+SERVICE_CREDENTIALS
+```
+
+Local development uses:
+
+```text
+.env
+```
+
+The `.env` file must not be committed.
+
+The repository should contain:
+
+```text
+.env.example
+```
+
+with safe placeholder values.
+
+---
+
+# Least Privilege
+
+Least privilege is a core security principle.
+
+Every permission should answer three questions:
+
+## 1. Why is the permission required?
+
+Example:
+
+```text
 Storage Blob Data Reader
 
-        |
-
-Azure Blob Storage
-
+Reason:
+The helpdesk agent needs to read IT knowledge documents.
 ```
 
+## 2. What is the impact if compromised?
 
-The application has read-only access.
-
-This prevents:
-
-- Document deletion
-- Document modification
-- Storage administration
-
-
-# Key Vault Security
-
-
-Secrets are accessed using:
+Example:
 
 ```text
-
-Managed Identity
-
-        |
-
-Key Vault Secrets User
-
-        |
-
-Azure Key Vault
+Impact:
+An attacker could potentially read knowledge-base documents.
 ```
 
-The application does not store Azure credentials.
+## 3. Can the permission be reduced?
 
-
-# Authorization Model
-
-
-Application authorization uses RBAC.
+Example:
 
 ```text
+Before:
 
-Role
+Storage Blob Data Contributor
 
-|
+After:
 
-Permission
-
-|
-
-Resource Access
-
+Storage Blob Data Reader
 ```
 
-Roles:
+---
 
-- Employee
-- Admin
+# Permission Review
 
+Every new permission should be documented.
 
-Permissions are explicitly assigned.
+Recommended review table:
 
+| Component      | Permission               | Purpose                  | Access Level |
+| -------------- | ------------------------ | ------------------------ | ------------ |
+| Helpdesk Agent | Storage Blob Data Reader | Read knowledge documents | Read         |
+| Helpdesk Agent | Key Vault Secrets User   | Read required secrets    | Read         |
+| Employee       | ticket:create            | Create tickets           | Application  |
+| Employee       | ticket:read              | View permitted tickets   | Application  |
+| Admin          | user:manage              | Manage users             | Application  |
 
-# Security Threat Considerations
+Permissions should be reviewed whenever a new Azure service or application capability is introduced.
 
+---
 
-## Credential Exposure
+# Defense in Depth
 
+The application uses multiple security layers.
 
-Risk:
+```text
+Layer 1
+User Authentication
+       |
+       v
+Layer 2
+JWT Validation
+       |
+       v
+Layer 3
+Application Authorization
+       |
+       v
+Layer 4
+Azure Identity
+       |
+       v
+Layer 5
+Azure RBAC
+       |
+       v
+Layer 6
+Azure Resource
+```
 
-Application secrets leaked.
+A successful authentication should never automatically imply unrestricted resource access.
 
+---
 
-Mitigation:
+# AI Service Security
 
-- No secrets in source code
-- Managed Identity
-- Key Vault integration
+The AI Helpdesk Agent uses a provider abstraction.
 
+Current architecture:
 
-## Excessive Permissions
+```text
+Chat API
+   |
+   v
+Helpdesk Agent
+   |
+   v
+AI Service
+   |
+   v
+AI Provider
+```
 
+The AI service must not bypass application authorization.
 
-Risk:
+Before processing protected information, the request should already have passed:
 
-Compromised application gains unnecessary access.
+```text
+JWT Validation
+       |
+       v
+User Authorization
+       |
+       v
+Agent Processing
+```
 
+Future Azure OpenAI integration should use identity-based authentication where supported rather than embedding service credentials in source code.
 
-Mitigation:
+---
 
-- RBAC review
-- Least privilege roles
-- Resource-level permissions
+# Logging and Auditing
 
+Security-relevant events should be logged without exposing sensitive information.
 
-## Unauthorized API Access
+Recommended events include:
 
+* Authentication attempts
+* Successful authentication
+* Failed authentication
+* Authorization failures
+* Protected resource access
+* Configuration access
+* Azure service failures
+* Application errors
 
-Risk:
+Do not log:
 
-Unknown users access APIs.
+* Passwords
+* Password hashes
+* JWT secrets
+* Access tokens
+* Azure credentials
+* Key Vault secret values
 
+---
 
-Mitigation:
+# Error Handling
 
-- Authentication layer
-- Token validation
-- Role checks
+Security-sensitive errors should avoid exposing internal implementation details.
 
+Avoid returning:
 
-# Security Review Checklist
+```text
+Database connection failed because...
+```
 
+or:
 
-## Identity
+```text
+Invalid password hash for user...
+```
 
-- [x] Azure identity foundation added
-- [ ] Managed Identity enabled in Azure hosting
-- [ ] RBAC roles assigned
+Prefer controlled responses such as:
 
+```text
+Invalid credentials
+```
 
-## Authentication
+or:
 
-- [ ] User authentication implemented
-- [ ] JWT validation completed
+```text
+Access denied
+```
 
+Detailed diagnostic information should remain in secure server-side logs.
 
-## Authorization
+---
 
-- [ ] Role permissions documented
-- [ ] Access boundaries reviewed
+# Security Boundaries
 
+## User Boundary
 
-## Secrets
+The user interacts with:
 
-- [x] No secrets stored in repository
-- [ ] Azure Key Vault integration completed
+```text
+HTTP API
+```
 
+The user should only receive data authorized for their role and identity.
 
-# Future Security Improvements
+---
 
+## Application Boundary
 
-Planned:
+The application is responsible for:
 
+* Authentication
+* JWT validation
+* Authorization
+* Input validation
+* Business rules
+* Security logging
 
-- Azure Key Vault integration
-- Centralized logging
-- Application Insights monitoring
-- API rate limiting
-- Audit logging
-- Production identity hardening
+---
+
+## Azure Boundary
+
+Azure is responsible for:
+
+* Managed identity authentication
+* RBAC enforcement
+* Resource-level access control
+* Key Vault access control
+* Storage authorization
+
+---
+
+# Current Security Status
+
+| Security Area                     | Status     |
+| --------------------------------- | ---------- |
+| Password hashing                  | Completed  |
+| JWT authentication                | Completed  |
+| Protected API routes              | Completed  |
+| Role-based authorization          | Completed  |
+| Azure `DefaultAzureCredential`    | Completed  |
+| Blob Storage identity access      | Completed  |
+| Key Vault identity access         | Completed  |
+| Least-privilege model             | Documented |
+| Azure RBAC deployment             | Planned    |
+| Production identity hardening     | Planned    |
+| Azure OpenAI identity integration | Next       |
+| Security testing                  | Ongoing    |
+
+---
+
+# Security Checklist
+
+Before merging security-related changes:
+
+* [ ] No secrets committed
+* [ ] No passwords logged
+* [ ] JWT validation is enforced
+* [ ] Protected endpoints require authentication
+* [ ] Authorization is enforced server-side
+* [ ] Azure SDK clients use identity-based authentication
+* [ ] Azure permissions follow least privilege
+* [ ] Key Vault access is restricted
+* [ ] Storage access is restricted
+* [ ] Security events are auditable
+* [ ] Documentation reflects the current security model
+* [ ] Tests pass
+* [ ] Ruff passes
+* [ ] Mypy passes
+
+---
+
+# Security Development Rules
+
+Always:
+
+1. Prefer identity-based authentication.
+2. Never hardcode secrets.
+3. Never commit `.env`.
+4. Use the smallest required Azure RBAC role.
+5. Validate JWTs before accessing protected resources.
+6. Enforce authorization on the backend.
+7. Avoid exposing sensitive information in errors.
+8. Avoid logging credentials and tokens.
+9. Document every new permission.
+10. Review security implications before adding new Azure integrations.
+
+---
+
+# Future Security Enhancements
+
+Future production hardening should include:
+
+* Azure RBAC deployment automation
+* Centralized audit logging
+* Application Insights monitoring
+* Security alerting
+* Token rotation strategy
+* Stronger production secret management
+* Automated dependency scanning
+* Static type checking
+* Static security analysis
+* Automated security tests
+* Azure OpenAI identity-based authentication
+* Production identity-provider integration
+
+The security architecture should evolve together with the application rather than being added after functionality is complete.

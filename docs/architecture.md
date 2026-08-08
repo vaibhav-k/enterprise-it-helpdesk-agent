@@ -1,87 +1,69 @@
-# Enterprise IT Helpdesk Agent Architecture
+# Enterprise IT Helpdesk Agent — Architecture
 
 ## Overview
 
-The Enterprise IT Helpdesk Agent is a secure, modular backend application designed to evolve into an AI-powered enterprise IT support platform running on Microsoft Azure.
+The Enterprise IT Helpdesk Agent is a secure FastAPI backend designed to evolve into an AI-powered enterprise IT support platform.
 
-The current implementation focuses on:
+The architecture combines:
 
-* Secure FastAPI backend
-* JWT authentication
-* Role-based authorization (RBAC)
-* Azure Managed Identity integration
-* Azure Blob Storage access
-* Azure Key Vault integration
-* Audit logging and monitoring foundation
-* AI-ready service architecture
+* JWT-based application authentication
+* Application-level authorization
+* Azure Managed Identity
+* Azure RBAC
+* Azure Blob Storage
+* Azure Key Vault
+* Azure OpenAI
+* Identity-based Azure authentication
+* AI service abstraction
+
+The application is developed **without Docker** and does not store Azure credentials in source code.
 
 ---
 
-# High-Level Architecture
+## High-Level Architecture
 
 ```text
-                     Employee
-
-                         |
-
-                         |
-
-                  FastAPI Backend
-
-                         |
-
-      ----------------------------------------
-
-      |            |            |            |
-
- Authentication  Authorization  Services   Logging
-
-      |            |            |            |
-
-      ----------------------------------------
-
-                         |
-
-                  Business Layer
-
-                         |
-
-              Azure Identity Layer
-
-                         |
-
-             DefaultAzureCredential
-
-                         |
-
-      ----------------------------------------
-
-      |                |                  |
-
- Azure Blob Storage   Key Vault   Azure Monitor
+                         Employee
+                            |
+                            v
+                    ┌───────────────┐
+                    │ FastAPI API   │
+                    └───────┬───────┘
+                            |
+              ┌─────────────┴─────────────┐
+              |                           |
+              v                           v
+       Authentication               Authorization
+              |                           |
+              └─────────────┬─────────────┘
+                            |
+                            v
+                     Helpdesk Agent
+                            |
+                            v
+                       AI Service
+                            |
+                            v
+                  Azure OpenAI Service
+                            |
+                            v
+                  DefaultAzureCredential
+                            |
+                    Managed Identity
+                            |
+                        Azure RBAC
+                            |
+             ┌──────────────┼──────────────┐
+             |              |              |
+             v              v              v
+       Blob Storage     Key Vault      Azure Services
 ```
 
 ---
 
-# Application Structure
+## Application Layers
 
-```text
-app/
-
-├── api/
-├── core/
-├── database/
-├── middleware/
-├── models/
-├── services/
-└── agents/
-```
-
-Each layer has a single responsibility.
-
----
-
-# API Layer
+### API Layer
 
 Location:
 
@@ -91,453 +73,392 @@ app/api/
 
 Responsibilities:
 
-* REST API endpoints
-* Request validation
-* Response generation
-* Authentication
-* Authorization
+* Expose REST endpoints
+* Validate requests
+* Authenticate users
+* Enforce authorization
+* Return API responses
 
-Current APIs:
+Current APIs include:
 
-* Health
 * Authentication
-* Tickets
-* Knowledge Base
+* Chat
 * Configuration
-* Administration
+* Tickets
+* Health
 
 ---
 
-# Core Layer
+## Agent Layer
 
 Location:
 
 ```text
-app/core/
+app/agents/
+```
+
+The agent layer contains helpdesk orchestration logic.
+
+Current component:
+
+```text
+app/agents/helpdesk_agent.py
 ```
 
 Responsibilities:
 
-* Application configuration
-* JWT security
-* Password hashing
-* Authorization helpers
-* Azure authentication
-* Logging
+* Receive user requests
+* Coordinate AI services
+* Apply helpdesk-specific behavior
+* Prepare for future tools
+* Prepare for knowledge retrieval
 
-Components:
-
-* `config.py`
-* `security.py`
-* `azure_identity.py`
-* `permissions.py`
-* `logging.py`
+The agent should not contain Azure SDK authentication logic.
 
 ---
 
-# Database Layer
+## AI Service Layer
 
 Location:
 
 ```text
-app/database/
+app/services/
 ```
 
-Responsibilities:
+The AI service layer isolates AI provider integration from the rest of the application.
 
-* User repository
-* Data access abstraction
-
-Current implementation:
-
-* In-memory user repository
-
-Future:
-
-* SQLAlchemy
-* Azure SQL Database
-
----
-
-# Models
-
-Location:
+Architecture:
 
 ```text
-app/models/
-```
-
-Responsibilities:
-
-* Request models
-* Response models
-* Domain models
-
-Current models include:
-
-* User
-* Authentication
-* Ticket
-
----
-
-# Middleware
-
-Location:
-
-```text
-app/middleware/
-```
-
-Responsibilities:
-
-* Request auditing
-* Request logging
-* Monitoring hooks
-
-Current middleware:
-
-* AuditMiddleware
-
----
-
-# Azure Identity Architecture
-
-The application never stores Azure credentials.
-
-Authentication uses:
-
-```text
-DefaultAzureCredential
-```
-
-## Local Development
-
-```text
-Developer Machine
-
-        |
-
-Azure CLI Login
-
-        |
-
-DefaultAzureCredential
-
-        |
-
-   Azure SDK
-
-        |
-
-  Azure Resources
-```
-
-## Azure Deployment
-
-```text
-Application
-
-        |
-
-System Assigned Managed Identity
-
-        |
-
-DefaultAzureCredential
-
-        |
-
-Azure Resources
-```
-
-The same application code works in both environments.
-
----
-
-# Authentication Architecture
-
-```text
-Employee
-
-      |
-
-Login API
-
-      |
-
-Password Verification
-
-      |
-
-JWT Generation
-
-      |
-
-Access Token
-
-      |
-
-Protected APIs
-```
-
----
-
-# Authorization Architecture
-
-The application uses Role-Based Access Control.
-
-```text
-User
-
-      |
-
-Role
-
-      |
-
-Permission
-
-      |
-
-Protected Endpoint
-```
-
-Current roles:
-
-* Employee
-* Admin
-
-Example permissions:
-
-* ticket:create
-* ticket:view
-* user:manage
-
----
-
-# Azure Authorization
-
-Azure authorization is separate from application authorization.
-
-```text
-Application
-
-        |
-
-Managed Identity
-
-        |
-
-Azure RBAC
-
-        |
-
-Azure Resource
-```
-
-Example roles:
-
-* Storage Blob Data Reader
-* Key Vault Secrets User
-* Monitoring Reader
-
----
-
-# Knowledge Base Architecture
-
-```text
-Employee
-
-      |
-
-Knowledge Endpoint
-
-      |
-
-Blob Storage Service
-
-      |
-
-Azure Blob Storage
-
-      |
-
-IT Documentation
-```
-
-Authentication:
-
-```text
-DefaultAzureCredential
-```
-
-No storage keys are stored.
-
----
-
-# Security Monitoring
-
-```text
-   Request
-
-      |
-
-Audit Middleware
-
-      |
-
-Application Logging
-
-      |
-
-Azure Monitor
-
-      |
-
-Application Insights
-```
-
-Events logged include:
-
-* Successful logins
-* Failed logins
-* API requests
-* Authorization failures
-
----
-
-# Future AI Architecture
-
-The next development phase introduces an AI service layer.
-
-```text
-Employee
-
-   |
-
-Chat API
-
-   |
-
 Helpdesk Agent
-
       |
-
-AI Service
-
-    |
-
-Azure OpenAI
-
+      v
+  AI Service
       |
-
-Knowledge Retrieval
-
-      |
-
-   Response
+      v
+Azure OpenAI Service
 ```
 
-This separation allows AI providers to be replaced without changing the API layer.
+Provider-specific SDK and authentication code remains inside the service layer.
+
+This keeps the agent independent from the Azure OpenAI SDK implementation.
 
 ---
 
-# Deployment Architecture
+## Azure OpenAI Architecture
+
+Azure OpenAI access uses identity-based authentication.
+
+```text
+Helpdesk Agent
+      |
+      v
+Azure OpenAI Service
+      |
+      v
+DefaultAzureCredential
+      |
+      ├───────────────┐
+      |               |
+      v               v
+ Azure CLI      Managed Identity
+ Local          Azure Hosting
+```
+
+No Azure OpenAI API key is required by the application.
+
+---
+
+## Azure Identity Architecture
+
+### Local Development
 
 ```text
 Developer
-
     |
+    v
+az login
+    |
+    v
+DefaultAzureCredential
+    |
+    v
+Azure SDK
+    |
+    v
+Azure Resource
+```
 
-GitHub Repository
+### Azure Deployment
 
+```text
+Azure Application
+    |
+    v
+System-Assigned Managed Identity
+    |
+    v
+Azure RBAC
+    |
+    v
+Azure Resource
+```
+
+The same application credential abstraction supports both environments.
+
+---
+
+## Knowledge Base Architecture
+
+The knowledge base uses Azure Blob Storage.
+
+```text
+Helpdesk Agent
       |
+      v
+Knowledge Service
+      |
+      v
+Azure Blob Storage
+      |
+      v
+IT Documentation
+```
 
-GitHub Actions (Future)
+Blob Storage access uses:
 
-          |
+```text
+DefaultAzureCredential
+```
 
-Azure Application Hosting
+The application does not store storage account credentials.
 
-        |
+Future development will add RAG retrieval on top of this foundation.
 
+---
+
+## Key Vault Architecture
+
+Azure Key Vault access is identity-based.
+
+```text
+Application
+     |
+     v
+Key Vault Service
+     |
+     v
+DefaultAzureCredential
+     |
+     v
 Managed Identity
+     |
+     v
+Azure Key Vault
+```
 
+Key Vault should only contain secrets that genuinely require secret storage.
+
+---
+
+## Security Boundaries
+
+### User Boundary
+
+The application validates:
+
+* Authentication
+* User identity
+* User role
+* API permissions
+
+### Application Boundary
+
+FastAPI controls:
+
+* Request validation
+* Authentication dependencies
+* Application authorization
+* Service orchestration
+
+### Azure Boundary
+
+Azure controls:
+
+* Managed Identity
+* RBAC
+* Resource authorization
+* Key Vault access
+* Storage access
+* Azure OpenAI access
+
+---
+
+## Defense in Depth
+
+The application has two distinct authorization layers.
+
+### Application Authorization
+
+```text
+    User
       |
+      v
+    JWT
+      |
+      v
+    Role
+      |
+      v
+  Permission
+      |
+      v
+API Endpoint
+```
 
-Azure Resources
+### Azure Authorization
+
+```text
+Application
+     |
+     v
+Managed Identity
+     |
+     v
+Azure RBAC
+     |
+     v
+Azure Resource
+```
+
+Being authorized to call an application endpoint does not automatically grant access to Azure resources.
+
+---
+
+## AI Request Flow
+
+Current target flow:
+
+```text
+      Employee
+      |
+      v
+      POST /chat
+      |
+      v
+JWT Authentication
+      |
+      v
+Application Authorization
+      |
+      v
+Helpdesk Agent
+   |
+   v
+AI Service
+   |
+   v
+Azure OpenAI
+   |
+   v
+Response
+```
+
+Future flow:
+
+```text
+Employee
+   |
+   v
+Chat API
+   |
+   v
+Helpdesk Agent
+   |
+   ├── Knowledge Retrieval
+   |        |
+   |        v
+   |   Blob Storage
+   |
+   ├── Ticket Tools
+   |
+   ├── Employee Tools
+   |
+   v
+Azure OpenAI
+   |
+   v
+Helpdesk Response
 ```
 
 ---
 
-# Design Principles
+## Design Principles
 
-## Security First
+### Identity-Based Authentication
 
-* Identity-based authentication
-* No embedded credentials
-* Secure defaults
-
-## Least Privilege
-
-Only minimum Azure permissions are assigned.
-
-Example:
+Azure services should use:
 
 ```text
-Storage Blob Data Reader
+DefaultAzureCredential
 ```
 
-Avoid:
+instead of embedded credentials.
+
+### Least Privilege
+
+Azure identities should receive only the permissions required for their specific operation.
+
+### Separation of Responsibilities
 
 ```text
-Owner
-Contributor
+API
+ |
+ v
+Agent
+ |
+ v
+Service
+ |
+ v
+Azure SDK
 ```
 
-unless explicitly required.
+Each layer should have a clearly defined responsibility.
 
-## Separation of Concerns
+### Provider Isolation
 
-Each application layer has a single responsibility.
+AI provider-specific implementation belongs inside the AI service layer.
 
-* API
-* Core
-* Services
-* Database
-* Middleware
+### Secure Configuration
 
-## Configuration Management
+Configuration is loaded through application settings and environment variables.
 
-Environment-specific configuration is stored outside source control.
-
-Secrets are retrieved using Azure Key Vault.
+Secrets must not be hardcoded.
 
 ---
 
-# Current Status
+## Current Architecture Status
 
-## Completed
+### Completed
 
-* Repository foundation
-* Configuration management
-* Azure identity foundation
-* User authentication
-* JWT security
-* Authorization model
-* Ticket API
-* Azure Blob Storage integration
-* Azure Key Vault integration
-* Azure RBAC design
-* Least privilege review
-* Audit logging
-* Monitoring foundation
+* FastAPI backend
+* Application authentication
+* Application authorization
+* Managed Identity foundation
+* Blob Storage integration
+* Key Vault integration
+* AI agent abstraction
+* Azure OpenAI identity-based service foundation
 
-## Next Phase
+### Current
 
-* AI service layer
-* Helpdesk agent
 * Azure OpenAI integration
-* Retrieval-Augmented Generation (RAG)
-* ITSM automation
+
+### Planned
+
+* RAG knowledge retrieval
+* AI tool calling
+* ITSM integration
+* Automated ticket workflows
+* Production Azure deployment
