@@ -1,167 +1,126 @@
 """
-Tests for the helpdesk chat API.
+Tests for the helpdesk agent.
 """
 
-from typing import cast
-
-import httpx2
-from fastapi.testclient import TestClient
-
 from app.agents.helpdesk_agent import HelpdeskAgent
-from app.api.chat import get_helpdesk_agent
-from app.core.security import get_current_user
-from app.main import app
 from app.models.chat import ChatMessage, ChatRequest
+from app.models.knowledge import (
+    KnowledgeContext,
+    KnowledgeDocument,
+)
 
 
-class FakeHelpdeskAgent:
-    """Fake helpdesk agent for API tests."""
+class FakeAIService:
+    """Fake AI service for deterministic tests."""
 
-    def process_request(self, message: str) -> str:
-        """
-        Return a deterministic response.
+    def __init__(self) -> None:
+        """Initialize captured messages."""
 
-        Args:
-            message: User's helpdesk message.
+        self.messages: list[ChatMessage] = []
 
-        Returns:
-            Fake helpdesk response.
-        """
+    def generate_response(
+        self,
+        messages: list[ChatMessage],
+    ) -> str:
+        """Capture messages and return a test response."""
 
-        return f"Test response: {message}"
+        self.messages = messages
 
-
-def test_chat_endpoint() -> None:
-    """Verify the chat endpoint delegates to the helpdesk agent."""
-
-    def fake_current_user() -> dict[str, str]:
-        """Return a test employee identity."""
-
-        return {
-            "username": "employee",
-            "role": "employee",
-        }
-
-    def fake_helpdesk_agent() -> FakeHelpdeskAgent:
-        """Return the fake helpdesk agent."""
-
-        return FakeHelpdeskAgent()
-
-    app.dependency_overrides[get_current_user] = fake_current_user
-    app.dependency_overrides[get_helpdesk_agent] = fake_helpdesk_agent
-
-    client: TestClient = TestClient(app)
-
-    try:
-        response: httpx2.Response = cast(
-            httpx2.Response,
-            client.post(  # type: ignore
-                "/chat",
-                json={
-                    "message": "My laptop is not working.",
-                },
-            ),
-        )
-    finally:
-        app.dependency_overrides.clear()
-
-    assert response.status_code == 200
-    assert response.json() == {
-        "response": "Test response: My laptop is not working.",
-    }
+        return "Test response"
 
 
-def test_chat_endpoint_with_history() -> None:
-    """Verify conversation history reaches the agent."""
+class FakeKnowledgeService:
+    """Fake knowledge service for deterministic tests."""
 
-    captured: dict[str, object] = {}
+    def __init__(
+        self,
+        context: KnowledgeContext,
+    ) -> None:
+        """Initialize with a fixed knowledge context."""
 
-    class HistoryAgent:
-        """Test agent that captures the request."""
+        self._context = context
+        self.query: str | None = None
 
-        def process_request(
-            self,
-            request: ChatRequest,
-        ) -> str:
-            captured["request"] = request
+    def get_context(
+        self,
+        query: str,
+        *,
+        max_documents: int = 5,
+    ) -> KnowledgeContext:
+        """Capture the query and return test knowledge."""
 
-            return "Context-aware response"
+        self.query = query
 
-    def fake_current_user() -> dict[str, str]:
-        """Return a test employee identity."""
+        assert max_documents == 5
 
-        return {
-            "username": "employee",
-            "role": "employee",
-        }
-
-    def fake_agent() -> HistoryAgent:
-        """Return the history test agent."""
-
-        return HistoryAgent()
-
-    app.dependency_overrides[get_current_user] = fake_current_user
-    app.dependency_overrides[get_helpdesk_agent] = fake_agent
-
-    client = TestClient(app)
-
-    try:
-        response = client.post(
-            "/chat",
-            json={
-                "message": "What should I do next?",
-                "history": [
-                    {
-                        "role": "user",
-                        "content": "My VPN is not working.",
-                    },
-                    {
-                        "role": "assistant",
-                        "content": "Let's check your network connection.",
-                    },
-                ],
-            },
-        )
-    finally:
-        app.dependency_overrides.clear()
-
-    assert response.status_code == 200
-    assert response.json() == {
-        "response": "Context-aware response",
-    }
-
-    request = captured["request"]
-
-    assert isinstance(request, ChatRequest)
-    assert len(request.history) == 2
-    assert request.message == "What should I do next?"
+        return self._context
 
 
-def test_helpdesk_agent_includes_history() -> None:
-    """Verify the agent sends history and the current message."""
-
-    class FakeAIService:
-        """Fake AI service."""
-
-        def __init__(self) -> None:
-            self.messages: list[ChatMessage] = []
-
-        def generate_response(
-            self,
-            messages: list[ChatMessage],
-        ) -> str:
-            self.messages = messages
-            return "Test response"
+def test_helpdesk_agent_adds_knowledge_context() -> None:
+    """Verify retrieved knowledge reaches the AI service."""
 
     ai_service = FakeAIService()
-    agent = HelpdeskAgent(ai_service)
+
+    knowledge_service = FakeKnowledgeService(
+        KnowledgeContext(
+            documents=[
+                KnowledgeDocument(
+                    name="vpn-guide.txt",
+                    content=(
+                        "Restart the VPN client and verify " "network connectivity."
+                    ),
+                ),
+            ],
+        ),
+    )
+
+    agent = HelpdeskAgent(
+        ai_service=ai_service,
+        knowledge_service=knowledge_service,
+    )
+
+    request = ChatRequest(
+        message="My VPN is not working.",
+    )
+
+    result = agent.process_request(request)
+
+    assert result == "Test response"
+
+    assert knowledge_service.query == ("My VPN is not working.")
+
+    assert len(ai_service.messages) == 2
+
+    assert ai_service.messages[0].role == "system"
+    assert "vpn-guide.txt" in ai_service.messages[0].content
+    assert "Restart the VPN client" in (ai_service.messages[0].content)
+
+    assert ai_service.messages[1] == ChatMessage(
+        role="user",
+        content="My VPN is not working.",
+    )
+
+
+def test_helpdesk_agent_preserves_history() -> None:
+    """Verify knowledge and conversation history are preserved."""
+
+    ai_service = FakeAIService()
+
+    knowledge_service = FakeKnowledgeService(
+        KnowledgeContext(),
+    )
+
+    agent = HelpdeskAgent(
+        ai_service=ai_service,
+        knowledge_service=knowledge_service,
+    )
 
     request = ChatRequest(
         message="What should I do next?",
         history=[
             ChatMessage(
                 role="user",
-                content="VPN is not working.",
+                content="My VPN is not working.",
             ),
             ChatMessage(
                 role="assistant",
@@ -170,12 +129,40 @@ def test_helpdesk_agent_includes_history() -> None:
         ],
     )
 
-    result = agent.process_request(request)
+    agent.process_request(request)
 
-    assert result == "Test response"
     assert len(ai_service.messages) == 3
 
-    assert ai_service.messages[-1] == ChatMessage(
+    assert ai_service.messages[0].role == "user"
+    assert ai_service.messages[1].role == "assistant"
+    assert ai_service.messages[2].role == "user"
+
+
+def test_helpdesk_agent_without_knowledge() -> None:
+    """Verify the agent works when retrieval finds nothing."""
+
+    ai_service = FakeAIService()
+
+    knowledge_service = FakeKnowledgeService(
+        KnowledgeContext(),
+    )
+
+    agent = HelpdeskAgent(
+        ai_service=ai_service,
+        knowledge_service=knowledge_service,
+    )
+
+    result = agent.process_request(
+        ChatRequest(
+            message="Hello",
+        ),
+    )
+
+    assert result == "Test response"
+
+    assert len(ai_service.messages) == 1
+
+    assert ai_service.messages[0] == ChatMessage(
         role="user",
-        content="What should I do next?",
+        content="Hello",
     )

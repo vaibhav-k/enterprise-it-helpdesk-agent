@@ -10,6 +10,7 @@ from app.agents.helpdesk_agent import HelpdeskAgent
 from app.core.security import get_current_user
 from app.models.chat import ChatRequest, ChatResponse
 from app.services.ai_service import AIService
+from app.services.knowledge_service import KnowledgeService
 
 router = APIRouter(
     prefix="/chat",
@@ -25,7 +26,7 @@ def get_helpdesk_agent() -> HelpdeskAgent:
         Configured helpdesk agent.
     """
 
-    return HelpdeskAgent(AIService())
+    return HelpdeskAgent(AIService(), KnowledgeService())
 
 
 @router.post(

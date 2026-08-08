@@ -31,6 +31,10 @@ class Settings(BaseSettings):
     azure_openai_timeout_seconds: float = 30.0
     azure_openai_max_tokens: int = 800
 
+    knowledge_max_documents: int = 5
+    knowledge_max_document_chars: int = 12_000
+    knowledge_max_context_chars: int = 40_000
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

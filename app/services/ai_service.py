@@ -17,6 +17,7 @@ from azure.identity import (
 from openai import OpenAI
 from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
+    ChatCompletionSystemMessageParam,
     ChatCompletionUserMessageParam,
 )
 
@@ -82,7 +83,11 @@ class AIService:
     @staticmethod
     def _build_messages(
         messages: list[ChatMessage],
-    ) -> list[ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam]:
+    ) -> list[
+        ChatCompletionSystemMessageParam
+        | ChatCompletionUserMessageParam
+        | ChatCompletionAssistantMessageParam
+    ]:
         """
         Convert application chat messages to OpenAI message types.
 
@@ -97,11 +102,20 @@ class AIService:
         """
 
         openai_messages: list[
-            ChatCompletionUserMessageParam | ChatCompletionAssistantMessageParam
+            ChatCompletionSystemMessageParam
+            | ChatCompletionUserMessageParam
+            | ChatCompletionAssistantMessageParam
         ] = []
 
         for message in messages:
-            if message.role == "user":
+            if message.role == "system":
+                openai_messages.append(
+                    ChatCompletionSystemMessageParam(
+                        role="system",
+                        content=message.content,
+                    ),
+                )
+            elif message.role == "user":
                 openai_messages.append(
                     ChatCompletionUserMessageParam(
                         role="user",
