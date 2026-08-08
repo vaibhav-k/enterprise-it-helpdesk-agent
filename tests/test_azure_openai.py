@@ -8,6 +8,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from app.models.chat import ChatMessage
 from app.services.ai_service import AIService
 
 ENDPOINT = "https://example.openai.azure.com"
@@ -127,10 +128,10 @@ def test_successful_response() -> None:
 
     result = service.generate_response(
         [
-            {
-                "role": "user",
-                "content": "How do I reset my password?",
-            },
+            ChatMessage(
+                role="user",
+                content="How do I reset my password?",
+            ),
         ],
     )
 
@@ -161,10 +162,10 @@ def test_empty_response() -> None:
     ):
         service.generate_response(
             [
-                {
-                    "role": "user",
-                    "content": "Test",
-                },
+                ChatMessage(
+                    role="user",
+                    content="Test",
+                ),
             ],
         )
 
@@ -190,10 +191,10 @@ def test_azure_openai_failure() -> None:
     ):
         service.generate_response(
             [
-                {
-                    "role": "user",
-                    "content": "Test",
-                },
+                ChatMessage(
+                    role="user",
+                    content="Test",
+                ),
             ],
         )
 
@@ -259,9 +260,65 @@ def test_empty_message_content() -> None:
     ):
         service.generate_response(
             [
-                {
-                    "role": "user",
-                    "content": "Test",
-                },
+                ChatMessage(
+                    role="user",
+                    content="Test",
+                ),
             ],
         )
+
+
+def test_generate_response_preserves_conversation_order() -> None:
+    """Verify conversation messages are sent in order."""
+
+    credential, token_provider, openai_client = create_service_mocks()
+
+    response = MagicMock()
+    response.choices = [
+        MagicMock(
+            message=MagicMock(
+                content="Response",
+            ),
+        ),
+    ]
+
+    openai_client.chat.completions.create.return_value = response
+
+    service = create_service(
+        openai_client,
+        token_provider,
+        credential,
+    )
+
+    service.generate_response(
+        [
+            ChatMessage(
+                role="user",
+                content="VPN is broken.",
+            ),
+            ChatMessage(
+                role="assistant",
+                content="Let's troubleshoot it.",
+            ),
+            ChatMessage(
+                role="user",
+                content="What next?",
+            ),
+        ],
+    )
+
+    _, kwargs = openai_client.chat.completions.create.call_args
+
+    messages = kwargs["messages"]
+
+    assert [message["role"] for message in messages] == [
+        "user",
+        "assistant",
+        "user",
+    ]
+
+    assert [message["content"] for message in messages] == [
+        "VPN is broken.",
+        "Let's troubleshoot it.",
+        "What next?",
+    ]

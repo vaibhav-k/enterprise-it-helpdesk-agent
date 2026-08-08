@@ -1,71 +1,69 @@
 """
-Helpdesk agent orchestration.
+Enterprise IT helpdesk agent.
 """
-
-from __future__ import annotations
 
 from typing import Protocol
 
-from app.services.ai_service import ChatMessage
+from app.models.chat import ChatMessage, ChatRequest
 
 
 class AIServiceProtocol(Protocol):
-    """Interface required by the helpdesk agent."""
+    """Protocol implemented by AI providers."""
 
     def generate_response(
         self,
         messages: list[ChatMessage],
     ) -> str:
-        """Generate an AI response from chat messages."""
+        """
+        Generate an AI response.
+
+        Args:
+            messages: Conversation messages.
+
+        Returns:
+            Generated response.
+        """
+
         ...
 
 
 class HelpdeskAgent:
     """Application-level helpdesk agent."""
 
-    def __init__(self, ai_service: AIServiceProtocol) -> None:
+    def __init__(
+        self,
+        ai_service: AIServiceProtocol,
+    ) -> None:
         """
         Initialize the helpdesk agent.
 
         Args:
-            ai_service: AI provider implementing the required interface.
+            ai_service: AI provider implementation.
         """
 
         self._ai_service = ai_service
 
-    def process_request(self, message: str) -> str:
+    def process_request(
+        self,
+        request: ChatRequest,
+    ) -> str:
         """
-        Process a helpdesk request.
+        Process a helpdesk request with conversation context.
 
         Args:
-            message: User's helpdesk message.
+            request: Chat request containing the current message
+            and optional conversation history.
 
         Returns:
-            Generated assistant response.
-
-        Raises:
-            ValueError: If the message is empty.
+            Generated helpdesk response.
         """
 
-        cleaned_message = message.strip()
-
-        if not cleaned_message:
-            raise ValueError("Message must not be empty.")
-
         messages: list[ChatMessage] = [
-            {
-                "role": "system",
-                "content": (
-                    "You are an enterprise IT helpdesk assistant. "
-                    "Provide clear, concise, and safe IT support guidance. "
-                    "Do not invent company policies, credentials, or "
-                    "security-sensitive information."
-                ),
-            },
-            {
-                "role": "user",
-                "content": cleaned_message,
-            },
+            *request.history,
+            ChatMessage(
+                role="user",
+                content=request.message,
+            ),
         ]
 
         return self._ai_service.generate_response(messages)

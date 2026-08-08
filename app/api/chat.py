@@ -61,7 +61,7 @@ def chat(
     del user
 
     try:
-        response = agent.process_request(request.message)
+        response = agent.process_request(request)
     except ValueError as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

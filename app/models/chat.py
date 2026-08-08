@@ -2,7 +2,22 @@
 Chat request and response models.
 """
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
+
+ChatRole = Literal["user", "assistant"]
+
+
+class ChatMessage(BaseModel):
+    """A message in the helpdesk conversation."""
+
+    role: ChatRole
+    content: str = Field(
+        ...,
+        min_length=1,
+        max_length=4000,
+    )
 
 
 class ChatRequest(BaseModel):
@@ -12,7 +27,11 @@ class ChatRequest(BaseModel):
         ...,
         min_length=1,
         max_length=4000,
-        description="Employee helpdesk question.",
+    )
+
+    history: list[ChatMessage] = Field(
+        default_factory=lambda: list[ChatMessage](),
+        max_length=20,
     )
 
 
