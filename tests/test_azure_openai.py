@@ -156,18 +156,18 @@ def test_empty_response() -> None:
         credential,
     )
 
+    messages = [
+        ChatMessage(
+            role="user",
+            content="Test",
+        ),
+    ]
+
     with pytest.raises(
         RuntimeError,
         match="Azure OpenAI returned no response choices",
     ):
-        service.generate_response(
-            [
-                ChatMessage(
-                    role="user",
-                    content="Test",
-                ),
-            ],
-        )
+        service.generate_response(messages)
 
 
 def test_azure_openai_failure() -> None:
@@ -185,18 +185,18 @@ def test_azure_openai_failure() -> None:
         credential,
     )
 
+    messages = [
+        ChatMessage(
+            role="user",
+            content="Test",
+        ),
+    ]
+
     with pytest.raises(
         RuntimeError,
         match="Azure OpenAI request failed",
     ):
-        service.generate_response(
-            [
-                ChatMessage(
-                    role="user",
-                    content="Test",
-                ),
-            ],
-        )
+        service.generate_response(messages)
 
 
 def test_timeout_configuration() -> None:
@@ -254,18 +254,18 @@ def test_empty_message_content() -> None:
         credential,
     )
 
+    messages = [
+        ChatMessage(
+            role="user",
+            content="Test",
+        ),
+    ]
+
     with pytest.raises(
         RuntimeError,
         match="Azure OpenAI returned an empty response",
     ):
-        service.generate_response(
-            [
-                ChatMessage(
-                    role="user",
-                    content="Test",
-                ),
-            ],
-        )
+        service.generate_response(messages)
 
 
 def test_generate_response_preserves_conversation_order() -> None:

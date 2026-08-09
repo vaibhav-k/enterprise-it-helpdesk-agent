@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends
 
 from app.core.permissions import (
     Permission,
+    Role,
 )
 from app.core.security import (
     get_current_user,
@@ -62,7 +63,12 @@ def list_tickets(
     """
     Return available tickets.
 
-    Requires authentication.
+    Requires authentication. Administrators can see every ticket;
+    employees can only see tickets they created themselves, to avoid
+    leaking other employees' helpdesk requests.
     """
 
-    return tickets
+    if user["role"] == Role.ADMIN.value:
+        return tickets
+
+    return [ticket for ticket in tickets if ticket.created_by == user["username"]]

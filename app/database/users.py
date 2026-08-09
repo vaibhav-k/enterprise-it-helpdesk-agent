@@ -12,14 +12,8 @@ Future replacement:
 - Enterprise Identity Provider
 """
 
-from passlib.context import CryptContext
-
+from app.core.security import hash_password
 from app.models.user import User
-
-password_context = CryptContext(
-    schemes=["bcrypt"],
-    deprecated="auto",
-)
 
 users: list[User] = []
 
@@ -27,13 +21,28 @@ users: list[User] = []
 def seed_users() -> None:
     """
     Create default development users.
+
+    Idempotent: calling this more than once (for example, once from
+    the application startup and once from a test) will not create
+    duplicate entries.
     """
+
+    if get_user_by_username("employee"):
+        return
 
     users.append(
         User(
             username="employee",
             password_hash=hash_password("Password123!"),
             role="employee",
+        )
+    )
+
+    users.append(
+        User(
+            username="admin",
+            password_hash=hash_password("Admin123!"),
+            role="admin",
         )
     )
 
@@ -52,76 +61,6 @@ def get_user_by_username(
             return user
 
     return None
-
-
-def hash_password(password: str) -> str:
-    """
-    Create secure password hash.
-
-    Args:
-        password:
-            Plain text password.
-
-    Returns:
-        BCrypt password hash.
-    """
-
-    return password_context.hash(password)  # pyright: ignore
-
-
-def verify_password(
-    password: str,
-    password_hash: str,
-) -> bool:
-    """
-    Verify user password.
-
-    Args:
-        password:
-            Plain text password.
-
-        password_hash:
-            Stored password hash.
-
-    Returns:
-        True if password matches.
-    """
-
-    return password_context.verify(  # pyright: ignore
-        password,
-        password_hash,
-    )
-
-
-_users: dict[str, User] = {
-    "employee@test.com": User(
-        username="employee@test.com",
-        password_hash=hash_password("Password123!"),
-        role="employee",
-    ),
-    "admin@test.com": User(
-        username="admin@test.com",
-        password_hash=hash_password("Admin123!"),
-        role="admin",
-    ),
-}
-
-
-def get_user(
-    username: str,
-) -> User | None:
-    """
-    Retrieve user by username.
-
-    Args:
-        username:
-            User login identifier.
-
-    Returns:
-        User object or None.
-    """
-
-    return _users.get(username)
 
 
 def create_user(
@@ -152,6 +91,6 @@ def create_user(
         role=role,
     )
 
-    _users[username] = user
+    users.append(user)
 
     return user

@@ -5,6 +5,7 @@ Loads application settings from environment variables
 and optional .env configuration.
 """
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -41,11 +42,29 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    if not azure_openai_endpoint:
-        raise ValueError("AZURE_OPENAI_ENDPOINT must be configured.")
+    @model_validator(mode="after")
+    def _validate_required_settings(self) -> "Settings":
+        """
+        Validate settings after environment values have been loaded.
 
-    if not azure_openai_deployment:
-        raise ValueError("AZURE_OPENAI_DEPLOYMENT must be configured.")
+        The previous implementation checked the class-body default
+        values (always empty strings) instead of the values actually
+        loaded from the environment, so this validation unconditionally
+        raised on import regardless of configuration. Validating the
+        instance in a model validator ensures real, loaded values are
+        checked instead.
+        """
+
+        if not self.azure_openai_endpoint.strip():
+            raise ValueError("AZURE_OPENAI_ENDPOINT must be configured.")
+
+        if not self.azure_openai_deployment.strip():
+            raise ValueError("AZURE_OPENAI_DEPLOYMENT must be configured.")
+
+        if not self.jwt_secret.strip():
+            raise ValueError("JWT_SECRET must be configured.")
+
+        return self
 
 
 settings = Settings()

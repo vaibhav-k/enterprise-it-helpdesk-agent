@@ -9,17 +9,23 @@ from app.api import (
     auth,
     chat,
     configuration,
+    health,
     knowledge,
     tickets,
 )
 from app.core.logging import (
     configure_logging,
 )
+from app.database.users import (
+    seed_users,
+)
 from app.middleware.audit import (
     AuditMiddleware,
 )
 
 configure_logging()
+
+seed_users()
 
 app = FastAPI(
     title="Enterprise IT Helpdesk Agent",
@@ -34,6 +40,8 @@ app.include_router(auth.router)
 app.include_router(chat.router)
 
 app.include_router(configuration.router)
+
+app.include_router(health.router)
 
 app.include_router(knowledge.router)
 

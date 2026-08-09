@@ -13,6 +13,9 @@ Azure Deployment:
     Managed Identity
 """
 
+from azure.core.exceptions import (
+    ResourceNotFoundError,
+)
 from azure.keyvault.secrets import (
     SecretClient,
 )
@@ -52,11 +55,17 @@ def get_secret(
             Name of secret.
 
     Returns:
-        Secret value.
+        Secret value, or ``None`` when the secret does not exist.
     """
 
     client = get_keyvault_client()
 
-    secret = client.get_secret(secret_name)
+    try:
+
+        secret = client.get_secret(secret_name)
+
+    except ResourceNotFoundError:
+
+        return None
 
     return secret.value

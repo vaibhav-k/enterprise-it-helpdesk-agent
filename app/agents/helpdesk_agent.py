@@ -143,7 +143,7 @@ class HelpdeskAgent:
 
         for document in context.documents:
             sections.append(
-                f"Document: {document.name}\n" f"{document.content}",
+                f"Document: {document.name}\n{document.content}",
             )
 
         knowledge_content = "\n\n---\n\n".join(

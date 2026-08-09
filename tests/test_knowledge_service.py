@@ -113,9 +113,11 @@ def test_get_context_returns_matching_document() -> None:
 
     blob_service.get_container_client.return_value = container_client
 
-    container_client.list_blobs.return_value = [
-        MagicMock(name="vpn-troubleshooting.txt"),
-    ]
+    blob = MagicMock()
+    blob.name = "vpn-troubleshooting.txt"
+    blob.size = 100
+
+    container_client.list_blobs.return_value = [blob]
 
     container_client.get_blob_client.return_value = blob_client
 
@@ -158,9 +160,11 @@ def test_get_context_returns_empty_for_no_match() -> None:
 
     blob_service.get_container_client.return_value = container_client
 
-    container_client.list_blobs.return_value = [
-        MagicMock(name="printer-guide.txt"),
-    ]
+    blob = MagicMock()
+    blob.name = "printer-guide.txt"
+    blob.size = 100
+
+    container_client.list_blobs.return_value = [blob]
 
     container_client.get_blob_client.return_value = MagicMock()
 
@@ -202,10 +206,18 @@ def test_get_context_respects_max_documents() -> None:
 
     blob_service.get_container_client.return_value = container_client
 
+    def make_blob(name: str) -> MagicMock:
+        """Create a mock blob with a real ``name`` attribute."""
+
+        blob = MagicMock()
+        blob.name = name
+        blob.size = 100
+        return blob
+
     container_client.list_blobs.return_value = [
-        MagicMock(name="vpn-1.txt"),
-        MagicMock(name="vpn-2.txt"),
-        MagicMock(name="vpn-3.txt"),
+        make_blob("vpn-1.txt"),
+        make_blob("vpn-2.txt"),
+        make_blob("vpn-3.txt"),
     ]
 
     def get_blob_client(
