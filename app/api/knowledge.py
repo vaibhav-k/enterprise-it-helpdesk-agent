@@ -32,13 +32,11 @@ def documents(
     """
 
     try:
-
         files = list_documents()
 
         return {"documents": files}
 
     except Exception as exc:
-
         raise HTTPException(
             status_code=500,
             detail="Unable to access knowledge base",

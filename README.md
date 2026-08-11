@@ -14,7 +14,7 @@ The project is being developed incrementally with a strong focus on:
 * AI agent architecture
 * Production-ready engineering practices
 
-> **Current scope:** The application does not use Microsoft Entra ID for end-user authentication. Application users are currently managed through the internal development user repository. Azure Managed Identity is used for application-to-Azure authentication.
+> **Current scope:** The application does not use Microsoft Entra ID for end-user authentication. Application users are currently managed through the internal development user repository. Azure Managed Identity is used for application-to-Azure authentication. Azure OpenAI integration is implemented, including retry/backoff for transient failures, per-user/per-IP rate limiting, server-side chat session persistence, and propagation of the authenticated user's identity into every Azure OpenAI request for audit and abuse-monitoring purposes.
 
 ---
 
@@ -111,7 +111,11 @@ The current high-level architecture is:
 * AI service abstraction
 * Helpdesk agent layer
 * Provider-independent design
-* Azure OpenAI integration planned
+* Azure OpenAI integration (Microsoft Entra ID auth, with an opt-in local-development API key fallback)
+* Retry with exponential backoff + jitter for transient Azure OpenAI failures
+* Per-user chat rate limiting and per-IP login rate limiting
+* Server-side chat session persistence
+* End-user identity propagation to Azure OpenAI (`user` field) for traceability
 
 ## Development Tools
 
@@ -145,10 +149,16 @@ The current high-level architecture is:
 | Helpdesk agent abstraction     | Completed   |
 | AI service abstraction         | Completed   |
 | Chat API foundation            | Completed   |
-| Azure OpenAI integration       | In progress |
+| Azure OpenAI integration       | Completed   |
+| Retry / backoff (Azure OpenAI) | Completed   |
+| Rate limiting (login, chat)    | Completed   |
+| Chat session persistence       | Completed   |
+| AI request identity propagation| Completed   |
 | RAG knowledge retrieval        | Planned     |
 | ITSM integration               | Planned     |
 | Production hardening           | Planned     |
+
+> Rate limiting and session persistence are in-memory and process-local today (see `app/core/rate_limit.py` and `app/database/sessions.py`). They are correct for a single running instance but need a shared backing store (e.g. Redis) before horizontal scaling.
 
 ---
 
@@ -274,7 +284,18 @@ Example:
 Authorization: Bearer <access-token>
 ```
 
-Protected routes validate the JWT before processing the request.
+Protected routes validate the JWT before processing the request. `POST /auth/login` itself is intentionally unauthenticated — it does not check any `Authorization` header, since a client must be able to reach it before it has a token. It is rate-limited per client IP instead (see [Rate limiting](#rate-limiting)) to slow credential-guessing attempts.
+
+## Development Users
+
+The in-memory user repository is seeded automatically on startup (`seed_users()`, called from `app/main.py`) with two accounts:
+
+| Username   | Password       | Role     |
+| ---------- | -------------- | -------- |
+| `employee` | `Password123!` | employee |
+| `admin`    | `Admin123!`    | admin    |
+
+This repository is explicitly a development placeholder (see `app/database/users.py`) and is planned to be replaced by a real identity provider or database-backed store.
 
 ---
 
@@ -455,7 +476,78 @@ app/
     └── chat.py
 ```
 
-The next major AI milestone is Azure OpenAI integration.
+The next major AI milestone is grounded RAG-based knowledge retrieval (see `docs/architecture.md` and Phase 8 below).
+
+---
+
+# Chat Reliability, Sessions, and Identity
+
+Four capabilities harden the chat path beyond a single request/response call:
+
+## Retry with backoff
+
+Transient Azure OpenAI failures (HTTP 429 rate limits, 5xx server errors, timeouts, connection errors) are retried automatically with exponential backoff and jitter, honoring a server-supplied `Retry-After` header when present. Non-transient failures (bad request, authentication, not found) are never retried. Configured via:
+
+```env
+AZURE_OPENAI_MAX_RETRIES=3
+AZURE_OPENAI_RETRY_BASE_SECONDS=0.5
+AZURE_OPENAI_RETRY_MAX_SECONDS=8.0
+```
+
+See `app/services/ai_service.py`.
+
+## Rate limiting
+
+An in-memory, per-process sliding-window limiter protects two endpoints:
+
+* `POST /auth/login` — limited per client IP, to slow credential-guessing attempts against an unauthenticated endpoint.
+* `POST /chat` — limited per authenticated user, since it is the most expensive and most abuse-sensitive operation in the app.
+
+Both return `429 Too Many Requests` with a `Retry-After` header once exceeded. Configured via:
+
+```env
+RATE_LIMIT_LOGIN_MAX_REQUESTS=5
+RATE_LIMIT_LOGIN_WINDOW_SECONDS=60
+RATE_LIMIT_CHAT_MAX_REQUESTS=20
+RATE_LIMIT_CHAT_WINDOW_SECONDS=60
+```
+
+This limiter is correct for a single running instance. A horizontally scaled deployment needs a shared store (e.g. Redis), or should enforce limits at a gateway (e.g. Azure API Management) in front of the app. See `app/core/rate_limit.py`.
+
+## Chat session persistence
+
+`POST /chat` no longer requires the client to resend the full conversation on every call. Omit `session_id` to start a new session (the response includes the new `session_id`); pass it back on subsequent calls to continue the same conversation using server-side history.
+
+```text
+POST /chat              {"message": "..."}                          -> new session
+POST /chat              {"message": "...", "session_id": "<id>"}    -> continues it
+GET  /chat/sessions                                                  -> list your own sessions
+GET  /chat/sessions/{id}                                              -> full message history
+DELETE /chat/sessions/{id}                                            -> delete a session
+```
+
+Sessions are strictly scoped to their owner: requesting another user's `session_id` returns `404`, not `403`, so the endpoint never confirms whether a given ID even exists. History is capped per session (`SESSION_MAX_MESSAGES`) and per user (`SESSION_MAX_PER_USER`) to bound memory use and the tokens sent to Azure OpenAI on every turn. Like the rate limiter, this store is in-memory and process-local — see `app/database/sessions.py`.
+
+```env
+SESSION_MAX_MESSAGES=20
+SESSION_MAX_PER_USER=20
+```
+
+## Identity propagation
+
+The authenticated user's identity flows from the JWT through `HelpdeskAgent.process_request` into `AIService.generate_response`, which passes it as Azure OpenAI's documented `user` field on every completion request. This makes every Azure OpenAI call traceable back to the employee who triggered it, for audit and abuse-monitoring purposes. It is deliberately scoped as *observability propagation*, not delegated authorization — the call is still made under the application's own Azure identity (`DefaultAzureCredential` or the local API-key fallback), not a per-user credential. Full delegated, per-user Azure authorization would require a materially different identity model (see Microsoft Entra Agent ID, below).
+
+Each request logs:
+
+```text
+INFO ai_service azure_openai_request user=<username>
+```
+
+---
+
+# Microsoft Entra Agent ID
+
+This application does **not** implement Microsoft Entra Agent ID (dedicated per-agent identity) or register itself as a non-Foundry agent via an Entra agent identity blueprint. The `HelpdeskAgent` class is a plain in-process Python object with no Entra presence of its own — it borrows the application's own Azure identity for every outbound call. Adopting Entra Agent ID would mean provisioning an agent identity blueprint via Microsoft Graph and giving the agent a credential distinct from the app's hosting identity; this is a meaningful, currently-preview-product undertaking, not a small code change, and is intentionally out of scope for now.
 
 ---
 
@@ -548,6 +640,7 @@ Example configuration:
 APP_NAME="Enterprise IT Helpdesk Agent"
 ENVIRONMENT="development"
 
+# Required. The application refuses to start if this is blank.
 JWT_SECRET="local-development-secret"
 JWT_ALGORITHM="HS256"
 JWT_EXPIRY_MINUTES=480
@@ -556,9 +649,43 @@ AZURE_STORAGE_ACCOUNT="storage-account"
 AZURE_CONTAINER="knowledge-base"
 
 KEYVAULT_NAME="keyvault-name"
+
+# Required. The application refuses to start if either is blank.
+AZURE_OPENAI_ENDPOINT="https://your-resource.openai.azure.com"
+AZURE_OPENAI_DEPLOYMENT="your-deployment-name"
+AZURE_OPENAI_API_VERSION="2024-10-21"
+AZURE_OPENAI_TIMEOUT_SECONDS=30
+AZURE_OPENAI_MAX_TOKENS=800
+
+# Optional, local development only. Leave blank everywhere else —
+# Microsoft Entra ID / managed identity is the supported auth path.
+# Only set this if you are blocked on an RBAC grant for the
+# "Cognitive Services OpenAI User" role and someone with access to
+# the resource has given you its key.
+AZURE_OPENAI_API_KEY=""
+
+# Retry / backoff for transient Azure OpenAI failures.
+AZURE_OPENAI_MAX_RETRIES=3
+AZURE_OPENAI_RETRY_BASE_SECONDS=0.5
+AZURE_OPENAI_RETRY_MAX_SECONDS=8.0
+
+# Rate limiting (in-memory, per-process).
+RATE_LIMIT_LOGIN_MAX_REQUESTS=5
+RATE_LIMIT_LOGIN_WINDOW_SECONDS=60
+RATE_LIMIT_CHAT_MAX_REQUESTS=20
+RATE_LIMIT_CHAT_WINDOW_SECONDS=60
+
+# Chat session persistence (in-memory, per-process).
+SESSION_MAX_MESSAGES=20
+SESSION_MAX_PER_USER=20
+
+# Knowledge base retrieval limits.
+KNOWLEDGE_MAX_DOCUMENTS=5
+KNOWLEDGE_MAX_DOCUMENT_CHARS=12000
+KNOWLEDGE_MAX_CONTEXT_CHARS=40000
 ```
 
-Production secrets should be managed through appropriate Azure services rather than committed configuration files.
+Production secrets should be managed through appropriate Azure services rather than committed configuration files. See `.env.example` for the full, documented list of settings.
 
 ---
 
@@ -572,42 +699,60 @@ enterprise-it-helpdesk-agent/
 │   │   └── helpdesk_agent.py
 │   │
 │   ├── api/
+│   │   ├── admin.py
 │   │   ├── auth.py
 │   │   ├── chat.py
 │   │   ├── configuration.py
+│   │   ├── health.py
+│   │   ├── knowledge.py
 │   │   └── tickets.py
 │   │
 │   ├── core/
 │   │   ├── azure_identity.py
 │   │   ├── config.py
 │   │   ├── logging.py
+│   │   ├── permissions.py
+│   │   ├── rate_limit.py
 │   │   └── security.py
 │   │
 │   ├── database/
+│   │   ├── sessions.py
 │   │   └── users.py
 │   │
 │   ├── middleware/
+│   │   └── audit.py
 │   │
 │   ├── models/
+│   │   ├── auth.py
 │   │   ├── chat.py
+│   │   ├── knowledge.py
 │   │   ├── ticket.py
 │   │   └── user.py
 │   │
 │   ├── services/
 │   │   ├── ai_service.py
 │   │   ├── keyvault_service.py
+│   │   ├── knowledge_service.py
 │   │   └── storage_service.py
 │   │
 │   └── main.py
 │
 ├── docs/
 │   ├── architecture.md
+│   ├── azure-rbac.md
 │   ├── development.md
+│   ├── least-privilege-review.md
 │   └── security-model.md
 │
 ├── tests/
+│   ├── test_auth_rate_limit.py
 │   ├── test_azure_identity.py
+│   ├── test_azure_openai.py
+│   ├── test_chat.py
 │   ├── test_config.py
+│   ├── test_helpdesk_agent.py
+│   ├── test_knowledge_service.py
+│   ├── test_rate_limit.py
 │   ├── test_token.py
 │   └── test_users.py
 │
@@ -724,7 +869,7 @@ http://localhost:8000/redoc
 
 # Testing
 
-Run the complete test suite:
+Run the complete test suite (48 tests as of this writing):
 
 ```powershell
 pytest
@@ -736,10 +881,32 @@ Run with verbose output:
 pytest -v
 ```
 
-Run a specific test:
+Run a specific test file:
 
 ```powershell
 pytest tests/test_token.py
+```
+
+Run just the retry/backoff tests:
+
+```powershell
+pytest tests/test_azure_openai.py -k retry -v
+```
+
+Run just the rate limiting tests:
+
+```powershell
+pytest tests/test_rate_limit.py tests/test_auth_rate_limit.py -v
+```
+
+## A note on in-memory state and `--reload`
+
+The user repository, ticket store, rate limiter, and chat session store are all process-local, in-memory state (deliberately — they are development placeholders, documented as such in their respective modules). This has one important consequence when testing manually with `uvicorn --reload`: **any file-timestamp change in the watched directory restarts the worker process and silently resets all of this state**, including counters mid-way through a rate-limit test. This isn't limited to deliberate edits — background activity like OneDrive/cloud-sync, antivirus scanning, or search indexing touching files in the project directory can trigger an unwanted reload.
+
+If a rate limit, session, or ticket test behaves unexpectedly (e.g. a rate limit that should trigger on request 21 never does), first check the server console for `WatchFiles detected changes... Reloading...` appearing between requests. If so, rerun the same test against a server started **without** `--reload`:
+
+```powershell
+uvicorn app.main:app --port 8000
 ```
 
 ---
@@ -905,17 +1072,31 @@ Completed:
 
 ## Phase 7 — Azure OpenAI
 
-**Current development step**
+Completed:
 
-Planned:
-
-* Azure OpenAI client integration
-* Secure Azure authentication
-* Model configuration
+* Azure OpenAI client integration (v1 API, Microsoft Entra ID auth via `DefaultAzureCredential`)
+* Local-development API key fallback for RBAC-blocked developers
+* Model configuration (`max_completion_tokens`, not the deprecated `max_tokens`)
 * Chat completion workflow
 * AI service error handling
 * AI request/response logging
-* Token and request safeguards
+* Token and request safeguards (message length limits, retrieval size limits)
+
+## Phase 7.5 — Reliability, Sessions, and Identity
+
+**Current development step**
+
+Completed:
+
+* Retry with exponential backoff + jitter for transient Azure OpenAI failures
+* Per-user chat rate limiting and per-IP login rate limiting
+* Server-side chat session persistence, scoped per user
+* End-user identity propagation into Azure OpenAI requests
+
+Planned:
+
+* Replace in-memory rate limiter and session store with a shared backing store (e.g. Redis) for multi-instance deployments
+* Structured, per-request correlation IDs across the audit log, session store, and AI service log lines
 
 ## Phase 8 — Knowledge Retrieval
 

@@ -36,9 +36,7 @@ def get_storage_client() -> BlobServiceClient:
         BlobServiceClient instance.
     """
 
-    account_url = (
-        f"https://" f"{settings.azure_storage_account}" f".blob.core.windows.net"
-    )
+    account_url = f"https://{settings.azure_storage_account}.blob.core.windows.net"
 
     return BlobServiceClient(
         account_url=account_url,

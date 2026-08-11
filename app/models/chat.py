@@ -39,8 +39,47 @@ class ChatRequest(BaseModel):
         max_length=20,
     )
 
+    session_id: str | None = Field(
+        default=None,
+        description=(
+            "Existing chat session to continue. Omit to start a new "
+            "session; the response will include the new session_id. "
+            "When set, server-side session history is used instead "
+            "of the `history` field."
+        ),
+    )
+
 
 class ChatResponse(BaseModel):
     """Response returned by the helpdesk chat endpoint."""
 
     response: str
+
+    session_id: str = Field(
+        description="Session identifier. Pass this back on the next "
+        "request in the same conversation to continue it.",
+    )
+
+
+class SessionSummary(BaseModel):
+    """Summary of a stored chat session, without full message content."""
+
+    session_id: str
+
+    message_count: int
+
+    created_at: float
+
+    updated_at: float
+
+
+class SessionDetail(BaseModel):
+    """Full stored chat session, including message history."""
+
+    session_id: str
+
+    messages: list[ChatMessage]
+
+    created_at: float
+
+    updated_at: float

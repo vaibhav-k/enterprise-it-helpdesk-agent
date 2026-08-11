@@ -44,6 +44,27 @@ class Settings(BaseSettings):
     knowledge_max_document_chars: int = 12_000
     knowledge_max_context_chars: int = 40_000
 
+    # Retry / backoff for transient Azure OpenAI failures (429, 5xx,
+    # timeouts, connection errors). Total worst-case attempts is
+    # 1 + azure_openai_max_retries.
+    azure_openai_max_retries: int = 3
+    azure_openai_retry_base_seconds: float = 0.5
+    azure_openai_retry_max_seconds: float = 8.0
+
+    # Rate limiting (in-memory, per-process). See app/core/rate_limit.py.
+    # Suitable for a single-instance deployment; a multi-instance
+    # deployment needs a shared store (e.g. Redis) instead.
+    rate_limit_login_max_requests: int = 5
+    rate_limit_login_window_seconds: float = 60.0
+    rate_limit_chat_max_requests: int = 20
+    rate_limit_chat_window_seconds: float = 60.0
+
+    # Session persistence (in-memory, per-process; see
+    # app/database/sessions.py). Bounds how much conversation history
+    # is retained server-side per chat session.
+    session_max_messages: int = 20
+    session_max_per_user: int = 20
+
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",

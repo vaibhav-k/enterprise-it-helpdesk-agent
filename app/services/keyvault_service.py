@@ -36,7 +36,7 @@ def get_keyvault_client() -> SecretClient:
         SecretClient instance.
     """
 
-    vault_url = f"https://" f"{settings.keyvault_name}" f".vault.azure.net"
+    vault_url = f"https://{settings.keyvault_name}.vault.azure.net"
 
     return SecretClient(
         vault_url=vault_url,
@@ -61,11 +61,9 @@ def get_secret(
     client = get_keyvault_client()
 
     try:
-
         secret = client.get_secret(secret_name)
 
     except ResourceNotFoundError:
-
         return None
 
     return secret.value

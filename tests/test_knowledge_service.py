@@ -122,7 +122,7 @@ def test_get_context_returns_matching_document() -> None:
     container_client.get_blob_client.return_value = blob_client
 
     blob_client.download_blob.return_value.readall.return_value = (
-        b"VPN troubleshooting guide. Check the VPN client and " b"network connection."
+        b"VPN troubleshooting guide. Check the VPN client and network connection."
     )
 
     with patch(

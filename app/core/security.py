@@ -105,7 +105,6 @@ def get_current_user(
     """
 
     try:
-
         payload = jwt.decode(
             credentials.credentials,
             settings.jwt_secret,
@@ -113,7 +112,6 @@ def get_current_user(
         )
 
     except JWTError as exc:
-
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token",
@@ -123,7 +121,6 @@ def get_current_user(
     role = payload.get("role")
 
     if not username or not role:
-
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid token payload",
@@ -144,11 +141,9 @@ def has_permission(
     """
 
     try:
-
         user_role = Role(role)
 
     except ValueError:
-
         return False
 
     return permission in ROLE_PERMISSIONS[user_role]
@@ -169,7 +164,6 @@ def require_permission(
             user["role"],
             permission,
         ):
-
             raise HTTPException(
                 status_code=403,
                 detail="Permission denied",

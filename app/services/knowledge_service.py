@@ -11,7 +11,7 @@ import re
 
 from azure.core.exceptions import AzureError
 from azure.identity import DefaultAzureCredential
-from azure.storage.blob import BlobServiceClient
+from azure.storage.blob import BlobProperties, BlobServiceClient, ContainerClient
 
 from app.core.config import settings
 from app.models.knowledge import KnowledgeContext, KnowledgeDocument
@@ -181,7 +181,6 @@ class KnowledgeService:
             ValueError: If max_documents is invalid.
             RuntimeError: If Azure Blob Storage access fails.
         """
-
         if max_documents < 1:
             raise ValueError(
                 "max_documents must be greater than zero.",
@@ -192,97 +191,118 @@ class KnowledgeService:
         if not normalized_query:
             return KnowledgeContext()
 
-        query_terms = self._extract_query_terms(
-            normalized_query,
-        )
+        query_terms = self._extract_query_terms(normalized_query)
 
         if not query_terms:
             return KnowledgeContext()
+
+        max_documents = min(
+            max_documents,
+            settings.knowledge_max_documents,
+        )
+        max_document_chars = max(
+            1,
+            settings.knowledge_max_document_chars,
+        )
+        max_context_chars = max(
+            1,
+            settings.knowledge_max_context_chars,
+        )
 
         container_client = self._client.get_container_client(
             self._container,
         )
 
         documents: list[KnowledgeDocument] = []
-
-        max_document_chars = max(
-            1,
-            settings.knowledge_max_document_chars,
-        )
-
-        max_context_chars = max(
-            1,
-            settings.knowledge_max_context_chars,
-        )
-
         total_context_chars = 0
 
         try:
             for blob in container_client.list_blobs():
-                if len(documents) >= min(
-                    max_documents,
-                    settings.knowledge_max_documents,
-                ):
+                if len(documents) >= max_documents:
                     break
 
-                blob_size = blob.size
-
-                if blob_size and blob_size > max_document_chars:
-                    continue
-
-                blob_client = container_client.get_blob_client(
-                    blob.name,
+                document = self._retrieve_matching_document(
+                    container_client=container_client,
+                    blob=blob,
+                    query_terms=query_terms,
+                    max_document_chars=max_document_chars,
+                    remaining_context_chars=(max_context_chars - total_context_chars),
                 )
 
-                raw_content = blob_client.download_blob().readall()
-
-                content = raw_content.decode(
-                    "utf-8",
-                    errors="replace",
-                )
-
-                if not content.strip():
+                if document is None:
                     continue
 
-                if not self._matches_query(
-                    blob.name,
-                    content,
-                    query_terms,
-                ):
-                    continue
+                documents.append(document)
+                total_context_chars += len(document.content)
 
-                remaining_chars = max_context_chars - total_context_chars
-
-                if remaining_chars <= 0:
+                if total_context_chars >= max_context_chars:
                     break
-
-                limited_content = self._truncate_content(
-                    content,
-                    min(
-                        max_document_chars,
-                        remaining_chars,
-                    ),
-                )
-
-                if not limited_content.strip():
-                    continue
-
-                documents.append(
-                    KnowledgeDocument(
-                        name=blob.name,
-                        content=limited_content,
-                    ),
-                )
-
-                total_context_chars += len(
-                    limited_content,
-                )
 
         except AzureError as exc:
             raise RuntimeError(
                 "Knowledge base retrieval failed.",
             ) from exc
 
-        return KnowledgeContext(
-            documents=documents,
+        return KnowledgeContext(documents=documents)
+
+    def _retrieve_matching_document(
+        self,
+        *,
+        container_client: ContainerClient,
+        blob: BlobProperties,
+        query_terms: set[str],
+        max_document_chars: int,
+        remaining_context_chars: int,
+    ) -> KnowledgeDocument | None:
+        """Retrieve and limit one matching knowledge document."""
+        if self._blob_is_too_large(
+            blob,
+            max_document_chars,
+        ):
+            return None
+
+        if remaining_context_chars <= 0:
+            return None
+
+        blob_client = container_client.get_blob_client(blob.name)
+
+        raw_content = blob_client.download_blob().readall()
+
+        content = raw_content.decode(
+            "utf-8",
+            errors="replace",
         )
+
+        if not content.strip():
+            return None
+
+        if not self._matches_query(
+            blob.name,
+            content,
+            query_terms,
+        ):
+            return None
+
+        limited_content = self._truncate_content(
+            content,
+            min(
+                max_document_chars,
+                remaining_context_chars,
+            ),
+        )
+
+        if not limited_content.strip():
+            return None
+
+        return KnowledgeDocument(
+            name=blob.name,
+            content=limited_content,
+        )
+
+    @staticmethod
+    def _blob_is_too_large(
+        blob: BlobProperties,
+        max_document_chars: int,
+    ) -> bool:
+        """Return whether a blob exceeds the document-size limit."""
+        return bool(blob.size and blob.size > max_document_chars)

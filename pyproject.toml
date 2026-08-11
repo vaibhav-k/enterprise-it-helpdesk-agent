@@ -3,10 +3,14 @@ typeCheckingMode = "strict"
 reportMissingImports = true
 reportMissingTypeStubs = false
 
-
 [tool.ruff]
 line-length = 88
 
+[tool.ruff.format]
+quote-style = "single"          # Options: "single", "double", or "preserve"
+indent-style = "space"          # Options: "tab" or "space"
+line-ending = "lf"              # Options: "lf", "crlf", "cr", or "native"
+skip-magic-trailing-comma = false
 
 [tool.ruff.lint]
 select = [

@@ -19,12 +19,17 @@ class AIServiceProtocol(Protocol):
     def generate_response(
         self,
         messages: list[ChatMessage],
+        *,
+        user_identifier: str | None = None,
     ) -> str:
         """
         Generate an AI response.
 
         Args:
             messages: Conversation messages.
+            user_identifier: Opaque identifier for the authenticated
+                end user, propagated through for audit/abuse-monitoring
+                traceability at the AI provider.
 
         Returns:
             Generated response.
@@ -78,6 +83,8 @@ class HelpdeskAgent:
     def process_request(
         self,
         request: ChatRequest,
+        *,
+        requesting_user: str | None = None,
     ) -> str:
         """
         Process a helpdesk request.
@@ -89,6 +96,14 @@ class HelpdeskAgent:
         Args:
             request: Chat request containing the current message
                 and optional conversation history.
+            requesting_user: Identifier of the authenticated employee
+                making the request. Propagated to the AI provider so
+                every model call is traceable back to the human who
+                triggered it (see ``AIServiceProtocol.generate_response``).
+                This is identity propagation for audit and
+                abuse-monitoring purposes; the call is still made
+                under the application's own Azure identity, not a
+                delegated per-user credential.
 
         Returns:
             Generated helpdesk response.
@@ -117,7 +132,10 @@ class HelpdeskAgent:
             ),
         )
 
-        return self._ai_service.generate_response(messages)
+        return self._ai_service.generate_response(
+            messages,
+            user_identifier=requesting_user,
+        )
 
     @staticmethod
     def _build_knowledge_message(

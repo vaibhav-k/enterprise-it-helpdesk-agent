@@ -10,12 +10,18 @@ Provides:
 
 from fastapi import (
     APIRouter,
+    Depends,
     HTTPException,
     status,
 )
 
+from app.core.config import settings
 from app.core.logging import (
     get_logger,
+)
+from app.core.rate_limit import (
+    RateLimiter,
+    make_ip_rate_limit_dependency,
 )
 from app.core.security import (
     create_access_token,
@@ -39,10 +45,18 @@ logger = get_logger(
     "authentication",
 )
 
+# Per-IP: login is unauthenticated, so there is no user identity yet
+# to key on. This bounds credential-guessing / brute-force attempts.
+login_rate_limiter = RateLimiter(
+    max_requests=settings.rate_limit_login_max_requests,
+    window_seconds=settings.rate_limit_login_window_seconds,
+)
+
 
 @router.post(
     "/login",
     response_model=TokenResponse,
+    dependencies=[Depends(make_ip_rate_limit_dependency(login_rate_limiter))],
 )
 def login(
     request: LoginRequest,
@@ -65,7 +79,6 @@ def login(
     user = get_user_by_username(request.username)
 
     if user is None:
-
         logger.warning(
             "failed_login username=%s reason=user_not_found",
             request.username,
@@ -82,7 +95,6 @@ def login(
     )
 
     if not password_valid:
-
         logger.warning(
             "failed_login username=%s reason=invalid_password",
             request.username,
