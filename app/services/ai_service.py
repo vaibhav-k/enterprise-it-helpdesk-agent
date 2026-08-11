@@ -4,10 +4,15 @@ Azure OpenAI service.
 Provides the application-level interface for communicating with
 Azure OpenAI using Microsoft Entra workload authentication through
 DefaultAzureCredential.
+
+An API key fallback is supported for local development only, for
+cases where a developer is blocked on an RBAC grant. See
+``Settings.azure_openai_api_key``.
 """
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from typing import Final
 
 from azure.identity import (
@@ -46,20 +51,39 @@ class AIService:
                 "AZURE_OPENAI_DEPLOYMENT must be configured.",
             )
 
-        credential = DefaultAzureCredential()
+        api_key = settings.azure_openai_api_key.strip()
 
-        token_provider = get_bearer_token_provider(
-            credential,
-            AZURE_OPENAI_SCOPE,
+        # Keyless Microsoft Entra ID auth is the supported path. The
+        # API key is only used as a local-development fallback when
+        # explicitly configured (see Settings.azure_openai_api_key).
+        api_credential: str | Callable[[], str] = (
+            api_key or self._build_token_provider()
         )
 
         self._client = OpenAI(
             base_url=self._build_base_url(endpoint),
-            api_key=token_provider,
+            api_key=api_credential,
             timeout=settings.azure_openai_timeout_seconds,
         )
 
         self._deployment = deployment
+
+    @staticmethod
+    def _build_token_provider() -> Callable[[], str]:
+        """
+        Build a Microsoft Entra ID bearer token provider.
+
+        Returns:
+            Callable token provider accepted by the OpenAI client's
+            ``api_key`` parameter.
+        """
+
+        credential = DefaultAzureCredential()
+
+        return get_bearer_token_provider(
+            credential,
+            AZURE_OPENAI_SCOPE,
+        )
 
     @staticmethod
     def _build_base_url(endpoint: str) -> str:
@@ -160,7 +184,12 @@ class AIService:
             response = self._client.chat.completions.create(
                 model=self._deployment,
                 messages=openai_messages,
-                max_tokens=settings.azure_openai_max_tokens,
+                # `max_tokens` is deprecated by Azure OpenAI in favor of
+                # `max_completion_tokens`, and reasoning-family models
+                # (o-series, GPT-5, etc.) reject `max_tokens` outright
+                # with a 400. `max_completion_tokens` is accepted by
+                # both older and newer chat-completions models.
+                max_completion_tokens=settings.azure_openai_max_tokens,
             )
         except Exception as exc:
             raise RuntimeError(

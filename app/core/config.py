@@ -32,6 +32,14 @@ class Settings(BaseSettings):
     azure_openai_timeout_seconds: float = 30.0
     azure_openai_max_tokens: int = 800
 
+    # Optional local-development fallback. Leave unset in every shared
+    # or production environment: Microsoft Entra ID / managed identity
+    # (DefaultAzureCredential) is the supported enterprise auth path.
+    # This exists only so a developer who is blocked on an RBAC grant
+    # for "Cognitive Services OpenAI User" can keep working locally
+    # using a key someone with resource access hands them.
+    azure_openai_api_key: str = ""
+
     knowledge_max_documents: int = 5
     knowledge_max_document_chars: int = 12_000
     knowledge_max_context_chars: int = 40_000
